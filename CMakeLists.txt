@@ -8,6 +8,7 @@ set(SRCs
     src/main.cpp
     src/lexer.cpp
     src/error.cpp
+    src/parser.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SRCs})
