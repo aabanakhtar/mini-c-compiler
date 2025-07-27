@@ -73,7 +73,13 @@ public:
     explicit Lexer(const std::string& file);
 
     const std::vector<Token>& get_tokens();
+private:
+    bool check(char c);
     const char consume(); 
+
+    void keyword(char seed); 
+    void string(); 
+    void number();
 private:
     std::string file; 
     std::vector<Token> tokens;
@@ -81,7 +87,17 @@ private:
     std::size_t line = 1; 
 
     inline static const std::unordered_map<std::string, TokenType> keyword_to_token_type = {
-        
+        {"if",       TokenType::IF},
+        {"else",     TokenType::ELSE},
+        {"while",    TokenType::WHILE},
+        {"for",      TokenType::FOR},
+        {"return",   TokenType::RETURN},
+        {"int",      TokenType::INT},
+        {"char",     TokenType::CHAR},
+        {"void",     TokenType::VOID},
+        {"struct",   TokenType::STRUCT},
+        {"break",    TokenType::BREAK},
+        {"continue", TokenType::CONTINUE}
     };
 };
 
