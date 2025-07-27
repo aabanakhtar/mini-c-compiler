@@ -33,6 +33,8 @@ const std::vector<Token>& Lexer::get_tokens()
         case '.': tokens.push_back(Token{TokenType::DOT, ".", line}); break;
         case ';': tokens.push_back(Token{TokenType::SEMICOLON, ";", line}); break;
         case '%': tokens.push_back(Token{TokenType::PERCENT, "%", line}); break;
+        case '[': tokens.push_back(Token{TokenType::LEFT_SBRACKET, "[", line}); break;
+        case ']': tokens.push_back(Token{TokenType::RIGHT_SBRACKET, "]", line}); break;
 
             /* SPECIAL CASES */
         case '!':
@@ -118,25 +120,64 @@ const std::vector<Token>& Lexer::get_tokens()
                 tokens.push_back(Token{TokenType::SLASH, "/", line});
             }
             break;
-            
+        
+        case '=': 
+            if (check('=')) 
+            {
+                tokens.push_back(Token{TokenType::EQUAL_EQUAL, "==", line}); 
+            }
+            else 
+            {
+                tokens.push_back(Token{TokenType::EQUAL, "==", line}); 
+            }
+            break;
 
+        case '&': 
+            if (check('&')) 
+            {
+                tokens.push_back(Token{TokenType::AND, "&&", line});
+            } 
+            else 
+            {
+                std::ostringstream ss; 
+                ss << "Expected & after & on line: " << line << "\n"; 
+                report_err(std::cout, ss.str()); 
+            }
+            break; 
+
+        case '|':
+            if (check('|'))
+            {
+                tokens.push_back(Token{TokenType::OR, "||", line}); 
+            } 
+            else 
+            {
+                std::ostringstream ss; 
+                ss << "Expected | after | on line: " << line << "\n"; 
+                report_err(std::cout, ss.str()); 
+            }
+            break; 
             /* MULTI CHAR TOKENS */
         default:
-
             /* IDENTIFIERS AND KW */
-            if (isalpha(ch)) 
+            if (std::isalpha(ch)) 
             {
                 keyword(ch); break;
             }
             /* NUMBERS */
-            else if (isdigit(ch))
+            else if (std::isdigit(ch))
             {
-                number(); break;
+                number(ch); break;
             }
             /* STRINGS */
             else if (ch == '"')
             {
                 string(); break;
+            }
+            /* CHARS */
+            else if (ch == '\'')
+            {
+                _char(); break;
             }
 
             std::ostringstream ss; 
@@ -175,7 +216,7 @@ const char Lexer::consume()
 void Lexer::keyword(char seed)
 {
     std::string result(1, seed);  
-    while (curr_char < file.size() && isalnum(file[curr_char])) 
+    while (curr_char < file.size() && std::isalnum(file[curr_char])) 
     {
         result += consume(); 
     }
@@ -188,6 +229,42 @@ void Lexer::keyword(char seed)
     }
 
     tokens.push_back(Token{TokenType::IDENTIFIER, result, line}); 
+}
+
+
+void Lexer::number(char c)
+{
+    std::string result(1, c);
+
+    // Read the integer part
+    while (curr_char < file.size() && std::isdigit(file[curr_char]))
+    {
+        result += consume();
+    }
+
+    if (curr_char < file.size() && file[curr_char] == '.')
+    {
+        result += consume();
+
+        if (curr_char >= file.size() || !std::isdigit(file[curr_char]))
+        {
+            std::ostringstream ss;
+            ss << "Malformed number on line: " << line << "\n";
+            report_err(std::cout, ss.str());
+            return;
+        }
+
+        while (curr_char < file.size() && std::isdigit(file[curr_char]))
+        {
+            result += consume();
+        }
+
+        tokens.push_back(Token{TokenType::NUMBER, result, line});
+    }
+    else
+    {
+        tokens.push_back(Token{TokenType::NUMBER, result, line});
+    }
 }
 
 void Lexer::string()
@@ -211,8 +288,24 @@ void Lexer::string()
     consume(); // the outer quote
 }
 
-void Lexer::number()
+void Lexer::_char()
 {
+    std::string value; 
+    if (curr_char < file.size() && file[curr_char] != '\'')
+    {
+        value += consume(); 
+    }
+    
+    if (curr_char < file.size() && file[curr_char] == '\'')
+    {
+        consume(); 
+        tokens.push_back(Token{TokenType::CHAR, value, line});
+        return;
+    }
+
+    std::ostringstream ss; 
+    ss << "Invalid character literal on line " << line << "\n"; 
+    report_err(std::cout, ss.str()); 
 }
 
 void print_token(const Token &t)
@@ -267,6 +360,10 @@ std::string stringify_token_type(const TokenType type)
         case TokenType::BREAK: return "BREAK";
         case TokenType::CONTINUE: return "CONTINUE";
         case TokenType::END_OF_FILE: return "END_OF_FILE";
+        case TokenType::AND: return "AND";
+        case TokenType::OR: return "OR";
+        case TokenType::LEFT_SBRACKET: return "LBRACKET"; 
+        case TokenType::RIGHT_SBRACKET: return "RBRACKET"; 
         default: return "UNKNOWN";
     }
 }

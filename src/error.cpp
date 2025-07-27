@@ -4,7 +4,7 @@ static ErrorMode state = ErrorMode::NO_ERR;
 
 void report_err(std::ostream& to, const std::string& what)
 {
-    to << "ERROR! " << what << "\n";
+    to << "\033[31merror\033[37m: " << what << "\n";
     state = ErrorMode::ERR;
 }
 

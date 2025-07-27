@@ -1,4 +1,1 @@
-int main() 
-{
-    "Hello World!"
-}
+'a''bcd'

@@ -19,7 +19,8 @@ enum class TokenType {
     STAR,           // *
     SLASH,          // /
     PERCENT,        // %
-
+    LEFT_SBRACKET,
+    RIGHT_SBRACKET, 
     // One or two character tokens
     BANG,           // !
     BANG_EQUAL,     // !=
@@ -33,6 +34,8 @@ enum class TokenType {
     MINUS_EQUAL,    // -=
     STAR_EQUAL,     // *=
     SLASH_EQUAL,    // /=
+    AND, 
+    OR,
 
     // Literals
     IDENTIFIER,
@@ -78,8 +81,9 @@ private:
     const char consume(); 
 
     void keyword(char seed); 
-    void string(); 
-    void number();
+    void string();
+    void _char();  
+    void number(char c);
 private:
     std::string file; 
     std::vector<Token> tokens;
