@@ -12,7 +12,6 @@ namespace AST {
     using LiteralVariant = std::variant<int, std::string, bool, char>; 
 
     struct Expression;
-    struct Equality; 
     struct Literal;
     struct Binary;
     struct Unary; 
@@ -41,7 +40,6 @@ namespace AST {
     template<typename T> using _up = std::unique_ptr<T>;
 
     using ExprVariant = std::variant<
-        _up<Equality>,
         _up<Unary>,
         Literal,
         _up<Binary>,
@@ -92,7 +90,6 @@ namespace AST {
 
     struct ExprVisitor
     {
-        virtual void operator()(_up<Equality>&) = 0;
         virtual void operator()(_up<Unary>&) = 0;
         virtual void operator()(const Literal&) = 0;
         virtual void operator()(_up<Binary>&) = 0;

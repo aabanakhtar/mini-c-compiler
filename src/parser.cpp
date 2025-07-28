@@ -1,69 +1,99 @@
 #include "parser.h"
 #include <iostream>
+#include <string>
+
+void TreePrinter::indent()
+{
+    for (std::size_t i = 0; i < indent_level; ++i)
+    {
+        std::cout << "  ";
+    }
+}
 
 void TreePrinter::operator()(std::unique_ptr<AST::Binary>& bin)
 {
-    std::cout << "Binary (op = " << static_cast<int>(bin->op) << ")\n";
-    std::cout << "Left: ";
+    indent(); std::cout << "BinaryExpression: op = " << static_cast<int>(bin->op) << "\n";
+    indent_level++;
+    indent(); std::cout << "Left:\n";
+    indent_level++;
     std::visit(*this, bin->left);
-    std::cout << "\nRight: ";
+    indent_level--;
+    indent(); std::cout << "Right:\n";
+    indent_level++;
     std::visit(*this, bin->right);
-    std::cout << "\n";
+    indent_level -= 2;
 }
 
 void TreePrinter::operator()(std::unique_ptr<AST::Unary>& unary)
 {
-    std::cout << "Unary (op = " << static_cast<int>(unary->op) << ")\n";
-    std::cout << "Operand: ";
+    indent(); std::cout << "UnaryExpression: op = " << static_cast<int>(unary->op) << "\n";
+    indent_level++;
+    indent(); std::cout << "Operand:\n";
+    indent_level++;
     std::visit(*this, unary->operand);
-    std::cout << "\n";
+    indent_level -= 2;
 }
 
 void TreePrinter::operator()(std::unique_ptr<AST::Assignment>& assign)
 {
-    std::cout << "Assignment (op = " << static_cast<int>(assign->op) << ")\n";
-    std::cout << "LHS: ";
+    indent(); std::cout << "Assignment: op = " << static_cast<int>(assign->op) << "\n";
+    indent_level++;
+    indent(); std::cout << "LHS:\n";
+    indent_level++;
     std::visit(*this, assign->lhs);
-    std::cout << "\nRHS: ";
+    indent_level--;
+    indent(); std::cout << "RHS:\n";
+    indent_level++;
     std::visit(*this, assign->rhs);
-    std::cout << "\n";
+    indent_level -= 2;
 }
 
 void TreePrinter::operator()(std::unique_ptr<AST::Call>& call)
 {
-    std::cout << "Call (func = " << call->func_name.value << ")\n";
-    std::cout << "Args:\n";
+    indent(); std::cout << "FunctionCall: " << call->func_name.value << "\n";
+    indent_level++;
+    indent(); std::cout << "Arguments:\n";
+    indent_level++;
     for (auto& arg : call->args)
     {
         std::visit(*this, arg);
-        std::cout << "\n";
     }
+    indent_level -= 2;
 }
 
 void TreePrinter::operator()(const AST::Variable& var)
 {
-    std::cout << "Variable (" << var.name.value << ")";
+    indent(); std::cout << "Variable: " << var.name.value << "\n";
 }
 
 void TreePrinter::operator()(std::unique_ptr<AST::StructAccess>& sa)
 {
-    std::cout << "StructAccess (member = " << sa->member_name << ")\n";
-    std::cout << "Object: ";
+    indent(); std::cout << "StructAccess: ." << sa->member_name << "\n";
+    indent_level++;
+    indent(); std::cout << "Object:\n";
+    indent_level++;
     std::visit(*this, sa->lhs);
-    std::cout << "\n";
+    indent_level -= 2;
 }
 
 void TreePrinter::operator()(std::unique_ptr<AST::ArrayAccess>& aa)
 {
-    std::cout << "ArrayAccess\n";
-    std::cout << "Array: ";
+    indent(); std::cout << "ArrayAccess:\n";
+    indent_level++;
+    indent(); std::cout << "Array:\n";
+    indent_level++;
     std::visit(*this, aa->lhs);
-    std::cout << "\nIndex: ";
+    indent_level--;
+    indent(); std::cout << "Index:\n";
+    indent_level++;
     std::visit(*this, aa->index);
-    std::cout << "\n";
+    indent_level -= 2;
 }
 
 void TreePrinter::operator()(const AST::Literal& lit)
 {
-    std::visit([](auto&& val) { std::cout << "Literal (" << val << ")"; }, lit.value);
+    indent();
+    std::visit([](auto&& val) {
+        std::cout << "Literal: " << val << "\n";
+    }, lit.value);
 }
