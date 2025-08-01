@@ -36,6 +36,7 @@ public:
 
     void panic();
     bool check(TokenType t);
+    bool check(Tokentype* t, size_t len, TokenType& found);
     TokenType advance();   
 private: 
     std::vector<Token> tokens;

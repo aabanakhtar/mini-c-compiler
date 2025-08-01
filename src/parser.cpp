@@ -120,12 +120,43 @@ AST::ExprVariant Parser::parse_assignment()
 AST::ExprVariant Parser::parse_logic_or() 
 {
     auto lhs = parse_logic_and(); 
-    while (check(TokenType::AND)) 
+    while (check(TokenType::OR)) 
     {
         advance(); // get rid of ampersand
         auto rhs = parse_logic_and(); 
-        lhs = std::make_unique<AST::Binary>(get_line(lhs), std::move(lhs), std::move(rhs)); 
+        lhs = std::make_unique<AST::Binary>(get_line(lhs), std::move(lhs), TokenType::OR, std::move(rhs)); 
     }
 
     return lhs; 
 }
+
+AST::ExprVariant Parser::parse_logic_and()
+{
+    auto lhs = parse_equality(); 
+    while (check(TokenType::OR)) 
+    {
+        advance(); // get rid of ampersand
+        auto rhs = parse_equality(); 
+        lhs = std::make_unique<AST::Binary>(get_line(lhs), std::move(lhs), TokenType::AND, std::move(rhs)); 
+    }
+
+    return lhs; 
+}
+
+AST::ExprVariant Parser::parse_relational()
+{
+    static TokenType relational_ops[] = {TokenType::LESS, TokenType::LESS_EQUAL, TokenType::GREATER, TokenType::GREATER_EQUAL};
+    
+    TokenType found_token;
+    auto lhs = parse_additive(); 
+    while (check(relational_ops, sizeof(relational_ops) / sizeof(TokenType), found_token)) 
+    {
+        advance(); // get rid of ampersand
+        auto rhs = parse_additive(); 
+        lhs = std::make_unique<AST::Binary>(get_line(lhs), std::move(lhs), found_token, std::move(rhs)); 
+    }
+
+    return lhs; 
+}
+
+// tbd 
