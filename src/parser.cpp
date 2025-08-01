@@ -97,3 +97,35 @@ void TreePrinter::operator()(const AST::Literal& lit)
         std::cout << "Literal: " << val << "\n";
     }, lit.value);
 }
+
+AST::ExprVariant Parser::get_program()
+{
+    return parse_assignment(); 
+}
+
+AST::ExprVariant Parser::parse_assignment()
+{
+    auto lhs = parse_logic_or(); 
+
+    while (check(TokenType::EQUAL)) 
+    {
+        auto op = advance(); // take in the equals 
+        auto rhs = parse_logic_or();
+        lhs = std::make_unique<AST::Assignment>(get_line(lhs), std::move(lhs), op, std::move(rhs)); 
+    }
+
+    return lhs; 
+}
+
+AST::ExprVariant Parser::parse_logic_or() 
+{
+    auto lhs = parse_logic_and(); 
+    while (check(TokenType::AND)) 
+    {
+        advance(); // get rid of ampersand
+        auto rhs = parse_logic_and(); 
+        lhs = std::make_unique<AST::Binary>(get_line(lhs), std::move(lhs), std::move(rhs)); 
+    }
+
+    return lhs; 
+}

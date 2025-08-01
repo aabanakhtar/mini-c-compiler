@@ -32,27 +32,5 @@ int main(int argc, char* argv[])
         print_token(tok); 
     } 
 
-    AST::Literal r;
-    r.line = 4; 
-    r.value = 6;  
-
-    auto q = std::make_unique<AST::Binary>(
-    );
-    q->line = 0; 
-    q->left = r;
-    q->right = r; 
-    q->op = TokenType::PLUS; 
-    AST::ExprVariant e0 = std::move(q); 
- 
-    auto b = std::make_unique<AST::Binary>(
-    );
-    b->line = 0; 
-    b->left = std::move(e0);
-    b->right =r; 
-    b->op = TokenType::PLUS; 
-    AST::ExprVariant e = std::move(b); 
-    TreePrinter p; 
-    std::visit(p, e);
-
     return 0; 
 }
