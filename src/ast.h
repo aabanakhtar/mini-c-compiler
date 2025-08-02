@@ -9,7 +9,7 @@
 
 namespace AST {
 
-    using LiteralVariant = std::variant<int, std::string, bool, char>; 
+    using LiteralVariant = std::variant<int, std::string, bool, char, float, double>; 
 
     struct Expression;
     struct Literal;

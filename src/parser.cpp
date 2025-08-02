@@ -1,6 +1,8 @@
 #include "parser.h"
 #include <iostream>
 #include <string>
+#include <sstream>
+#include "error.h"
 
 void TreePrinter::indent()
 {
@@ -111,7 +113,7 @@ AST::ExprVariant Parser::parse_assignment()
     {
         auto op = advance(); // take in the equals 
         auto rhs = parse_logic_or();
-        lhs = std::make_unique<AST::Assignment>(get_line(lhs), std::move(lhs), op, std::move(rhs)); 
+        lhs = std::make_unique<AST::Assignment>(get_line(lhs), std::move(lhs), op.type, std::move(rhs)); 
     }
 
     return lhs; 
@@ -143,6 +145,11 @@ AST::ExprVariant Parser::parse_logic_and()
     return lhs; 
 }
 
+AST::ExprVariant Parser::parse_equality()
+{
+    return parse_relational(); // TODO: lol 
+}
+
 AST::ExprVariant Parser::parse_relational()
 {
     static TokenType relational_ops[] = {TokenType::LESS, TokenType::LESS_EQUAL, TokenType::GREATER, TokenType::GREATER_EQUAL};
@@ -159,4 +166,115 @@ AST::ExprVariant Parser::parse_relational()
     return lhs; 
 }
 
-// tbd 
+AST::ExprVariant Parser::parse_additive()
+{
+    static TokenType additive_ops[] = {TokenType::PLUS, TokenType::MINUS}; 
+
+    TokenType found_token; 
+    auto lhs = parse_multiplicative(); 
+    while (check(additive_ops, sizeof(additive_ops) / sizeof(TokenType), found_token))
+    {
+        advance(); 
+        auto rhs = parse_multiplicative(); 
+        lhs = std::make_unique<AST::Binary>(get_line(lhs), std::move(lhs), found_token, std::move(rhs)); 
+    }
+
+    return lhs; 
+}
+
+AST::ExprVariant Parser::parse_multiplicative()
+{
+    static TokenType mul_ops[] = {TokenType::STAR, TokenType::SLASH}; 
+
+    TokenType found_token; 
+    auto lhs = parse_unary(); 
+    while (check(mul_ops, sizeof(mul_ops) / sizeof(TokenType), found_token))
+    {
+        advance(); 
+        auto rhs = parse_unary(); 
+        lhs = std::make_unique<AST::Binary>(get_line(lhs), std::move(lhs), found_token, std::move(rhs)); 
+    }
+
+    return lhs; 
+}
+
+AST::ExprVariant Parser::parse_unary()
+{
+    static TokenType unary_ops[] = {TokenType::MINUS, TokenType::STAR, TokenType::PLUS}; 
+
+    TokenType found_token; 
+    if (check(unary_ops, sizeof(unary_ops) / sizeof(TokenType), found_token)) 
+    {
+        auto line = advance().line; 
+        return std::make_unique<AST::Unary>(line, found_token, parse_unary()); 
+    }
+
+    return parse_postfix(); 
+}
+
+// TODO: update when finding postfix stuff
+AST::ExprVariant Parser::parse_postfix()
+{
+    return parse_primary();
+}
+
+AST::ExprVariant Parser::parse_primary()
+{
+    if (check(TokenType::NUMBER))
+    {
+        auto val = advance(); 
+        auto literal = AST::Literal(val.line, std::stof(val.value));
+        return literal; 
+    }
+    else
+    {
+        auto offender = advance();  // get the offending token
+        panic("Failed to parse expression!", offender.line); 
+        return AST::Literal(0, 0);
+    }
+}
+
+void Parser::panic(const std::string& why, std::size_t line) 
+{
+    std::ostringstream ss; 
+    ss << "FAILED PARSE! " << why << " on line: " << line << ".\n";
+    report_err(std::cout, ss.str());
+    std::exit(1); // TODO: synchronize
+}
+
+
+bool Parser::check(TokenType t)
+{
+    if (tokens[current_tok].type == t) 
+    {
+        return true;
+    }
+
+    return false; 
+}
+
+
+bool Parser::check(TokenType* types, std::size_t len, TokenType& found)
+{
+    for (std::size_t i = 0; i < len; ++i)
+    {
+        if (tokens[current_tok].type == types[i]) 
+        {
+            found = tokens[current_tok].type;
+            return true;
+        }
+    }
+
+    return false; 
+}
+
+
+Token Parser::advance()
+{
+    if (current_tok + 1 < tokens.size() - 1)
+    {
+        return tokens[current_tok++]; 
+    }
+    
+    return tokens[tokens.size() - 1];
+}

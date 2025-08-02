@@ -22,6 +22,8 @@ struct TreePrinter : AST::ExprVisitor
 class Parser 
 {
 public: 
+    explicit Parser(const std::vector<Token>& tokens) : tokens(tokens) {}
+
     AST::ExprVariant get_program(); 
     AST::ExprVariant parse_assignment();
     AST::ExprVariant parse_logic_or();   
@@ -34,12 +36,12 @@ public:
     AST::ExprVariant parse_postfix();        // for call, array, struct access: (), [], .
     AST::ExprVariant parse_primary();        // for literals, identifiers, grouped expressions
 
-    void panic();
+    void panic(const std::string& why, std::size_t line);
     bool check(TokenType t);
-    bool check(Tokentype* t, size_t len, TokenType& found);
-    TokenType advance();   
+    bool check(TokenType* t, std::size_t len, TokenType& found);
+    Token advance();   
 private: 
-    std::vector<Token> tokens;
+    const std::vector<Token>& tokens;
     size_t current_tok = 0;
 
     template<typename Variant>
