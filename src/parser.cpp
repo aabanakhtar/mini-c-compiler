@@ -147,7 +147,18 @@ AST::ExprVariant Parser::parse_logic_and()
 
 AST::ExprVariant Parser::parse_equality()
 {
-    return parse_relational(); // TODO: lol 
+    static TokenType equality_ops[] = {TokenType::EQUAL_EQUAL, TokenType::BANG_EQUAL};
+    
+    TokenType found_token;
+    auto lhs = parse_relational(); 
+    while (check(equality_ops, sizeof(equality_ops) / sizeof(TokenType), found_token)) 
+    {
+        advance(); // get rid of ampersand
+        auto rhs = parse_relational(); 
+        lhs = std::make_unique<AST::Binary>(get_line(lhs), std::move(lhs), found_token, std::move(rhs)); 
+    }
+
+    return lhs; 
 }
 
 AST::ExprVariant Parser::parse_relational()

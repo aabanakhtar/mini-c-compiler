@@ -31,6 +31,7 @@ int main(int argc, char* argv[])
     {
         print_token(tok); 
     } 
+    
     Parser parser(lexer.get_tokens());
     auto expr = parser.get_program();
     std::visit(TreePrinter{}, expr); 
