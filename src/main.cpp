@@ -4,6 +4,7 @@
 #include "parser.h"
 #include <fstream> 
 #include <sstream>
+#include "compiler.h"
 
 int main(int argc, char* argv[]) 
 {
