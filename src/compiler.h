@@ -3,20 +3,32 @@
 
 #include "llvm/IR/Value.h"
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Verifier.h"
 #include "ast.h"
+#include <unordered_map>
+#include <memory>
 
 class Codegen
 {
 public:
-    //Codegen(llvm::LLVMContext& context, llvm::Module& module, llvm::IRBuilder<>& builder);
-        //: context(context), module(module), builder(builder) {}
+    explicit Codegen();
+
+    void test_literal_codegen()
+    {
+        llvm::FunctionType *func_type = llvm::FunctionType::get(
+            llvm::Type::getInt32Ty(*context), false);
+        llvm::Function *func = llvm::Function::Create(
+            func_type, llvm::Function::ExternalLinkage, "test", mod.get());
+        llvm::BasicBlock *bb = llvm::BasicBlock::Create(*context, "entry", func);
+        builder->SetInsertPoint(bb);
+        AST::Literal lit(0, int(5));
+        llvm::Value *ret_val = gen_literal(lit);
+        builder->CreateRet(ret_val);
+        llvm::verifyFunction(*func);
+        mod->print(llvm::outs(), nullptr);
+    }   
 
     llvm::Value* generate_expr(const AST::ExprVariant& expr);
-
-private:
-    //llvm::LLVMContext& context;
-    //llvm::Module& module;
-    //llvm::IRBuilder<>& builder;
 
     llvm::Value* gen_literal(const AST::Literal &lit);
     llvm::Value* gen_variable(const AST::Variable& var);
@@ -28,9 +40,14 @@ private:
     llvm::Value* gen_array_access(const AST::ArrayAccess& aa);
 
 private: 
-    static llvm::Module* mod; 
-    static llvm::IRBuilder()
-
+    // stores internal info that we just pass around
+    std::unique_ptr<llvm::LLVMContext> context; 
+    // creates ir instructions
+    std::unique_ptr<llvm::IRBuilder<>> builder; 
+    // the "translation unit"
+    std::unique_ptr<llvm::Module> mod; 
+    // keep track of stuff
+    std::unordered_map<std::string, llvm::Value*> names; 
 };
 
 

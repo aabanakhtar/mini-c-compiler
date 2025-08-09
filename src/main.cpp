@@ -14,7 +14,6 @@ int main(int argc, char* argv[])
         report_err(std::cout, "Expected a filename!"); 
         return 1;
     }
-    #endif 
 
     const char* filename = "../test/main.c";
     std::fstream file(filename);
@@ -36,5 +35,10 @@ int main(int argc, char* argv[])
     Parser parser(lexer.get_tokens());
     auto expr = parser.get_program();
     std::visit(TreePrinter{}, expr); 
-    return 0; 
+
+    #endif 
+
+    AST::Literal lit(0, 0.5); 
+    Codegen gen;
+    gen.test_literal_codegen();
 }

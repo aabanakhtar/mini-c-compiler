@@ -1,5 +1,12 @@
 #include "compiler.h"
 
+Codegen::Codegen()
+{
+    context = std::make_unique<llvm::LLVMContext>();
+    mod = std::make_unique<llvm::Module>("main", *context);
+    builder = std::make_unique<llvm::IRBuilder<>>(*context);
+}
+
 llvm::Value *Codegen::gen_literal(const AST::Literal &lit)
 {
     auto generate_ir = [&](auto&& literal) -> llvm::Value* 
@@ -8,10 +15,21 @@ llvm::Value *Codegen::gen_literal(const AST::Literal &lit)
 
         if (std::is_same_v<T, float>)
         {
-            return ConstantFP::
+            // get the type if it exists or create it in the context
+            auto type = llvm::Type::getFloatTy(*context); 
+            // generate it
+            return llvm::ConstantFP::get(type, literal); 
+        } 
+        else if (std::is_same_v<T, double>)
+        {
+            auto type = llvm::Type::getDoubleTy(*context); 
+            return llvm::ConstantFP::get(type, literal); // doobles work with constant FP
         }
-        
-
+        else if (std::is_same_v<T, int>)
+        {
+            auto type = llvm::Type::getInt32Ty(*context); 
+            return llvm::ConstantInt::get(type, literal, true); // doobles work with constant FP
+        } 
 
         return nullptr; 
     };
