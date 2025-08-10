@@ -7,7 +7,7 @@ Codegen::Codegen()
     builder = std::make_unique<llvm::IRBuilder<>>(*context);
 }
 
-llvm::Value *Codegen::gen_literal(const AST::Literal &lit)
+llvm::Value *Codegen::gen(const AST::Literal &lit)
 {
     auto generate_ir = [&](auto&& literal) -> llvm::Value* 
     {
@@ -28,8 +28,13 @@ llvm::Value *Codegen::gen_literal(const AST::Literal &lit)
         else if (std::is_same_v<T, int>)
         {
             auto type = llvm::Type::getInt32Ty(*context); 
-            return llvm::ConstantInt::get(type, literal, true); // doobles work with constant FP
+            return llvm::ConstantInt::get(type, literal, true); // true = signed
         } 
+        else if (std::is_same_v<T, char>)
+        {
+            auto type = llvm::Type::getInt8Ty(*context); 
+            return llvm::ConstantInt::get(type, literal, true);
+        }
 
         return nullptr; 
     };
@@ -38,37 +43,82 @@ llvm::Value *Codegen::gen_literal(const AST::Literal &lit)
     return std::visit(generate_ir, lit.value);
 }
 
-llvm::Value *Codegen::gen_variable(const AST::Variable &var)
+
+llvm::Value* Codegen::gen(const AST::Variable& var)
 {
     return nullptr;
 }
 
-llvm::Value *Codegen::gen_binary(const AST::Binary &bin)
+llvm::Value* Codegen::gen(const std::unique_ptr<AST::Binary>& bin)
+{
+    switch (AST::get_type(bin->left)) //  assumes semantic analyzer returned a valid ast (TODO:)
+    {
+    case AST::LiteralType::INT:
+        return generate_int_ops(bin);
+    case AST::LiteralType::FLOAT:
+        return generate_precise_ops(bin);
+    case AST::LiteralType::DOUBLE:
+        return generate_precise_ops(bin);
+    case AST::LiteralType::CHAR:
+        return generate_int_ops(bin);
+    default:
+        return nullptr;
+    }
+}
+
+llvm::Value* Codegen::gen(const std::unique_ptr<AST::Unary>& un)
 {
     return nullptr;
 }
 
-llvm::Value *Codegen::gen_unary(const AST::Unary &un)
+llvm::Value* Codegen::gen(const std::unique_ptr<AST::Assignment>& asn)
 {
     return nullptr;
 }
 
-llvm::Value *Codegen::gen_assignment(const AST::Assignment &asn)
+llvm::Value* Codegen::gen(const std::unique_ptr<AST::Call>& call)
 {
     return nullptr;
 }
 
-llvm::Value *Codegen::gen_call(const AST::Call &call)
+llvm::Value* Codegen::gen(const std::unique_ptr<AST::StructAccess>& sa)
 {
     return nullptr;
 }
 
-llvm::Value *Codegen::gen_struct_access(const AST::StructAccess &sa)
+llvm::Value* Codegen::gen(const std::unique_ptr<AST::ArrayAccess>& aa)
 {
     return nullptr;
 }
 
-llvm::Value *Codegen::gen_array_access(const AST::ArrayAccess &aa)
+llvm::Value* Codegen::generate_int_ops(const std::unique_ptr<AST::Binary>& bin)
+{
+    auto type = llvm::Type::getInt32Ty(*context);
+
+    const auto left = generate(bin->left);
+    const auto right = generate(bin->right);
+
+    if (!left || !right)
+    {
+        return nullptr;
+    }
+
+    switch (bin->op)
+    {
+    case TokenType::PLUS:
+        return builder->CreateAdd(left, right);
+    case TokenType::MINUS:
+        return builder->CreateSub(left, right);
+    case TokenType::STAR:
+        return builder->CreateMul(left, right);
+    case TokenType::SLASH:
+        return builder->CreateSDiv(left, right);
+    default:
+        return nullptr; // shouldn't reach here unless something is weird
+    }
+}
+
+llvm::Value* Codegen::generate_precise_ops(const std::unique_ptr<AST::Binary>& bin)
 {
     return nullptr;
 }

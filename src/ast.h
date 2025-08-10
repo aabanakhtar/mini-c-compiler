@@ -9,6 +9,11 @@
 
 namespace AST {
 
+    enum class LiteralType 
+    {
+        INT, CHAR, FLOAT, DOUBLE, CSTRING, UNKNOWN
+    };
+
     using LiteralVariant = std::variant<int, std::string, char, float, double>; 
 
     struct Expression;
@@ -24,6 +29,7 @@ namespace AST {
     struct Expression
     {
         std::size_t line;
+        LiteralType result_type = LiteralType::INT; // initalized in semantic analysis
         Expression(size_t line) : line(line) {} 
         virtual ~Expression() = default;
     };
@@ -41,7 +47,7 @@ namespace AST {
 
         Literal(size_t line, LiteralVariant value) : Expression(line), value(value) {}
     }; 
-
+        
     template<typename T> using _up = std::unique_ptr<T>;
 
     using ExprVariant = std::variant<
@@ -128,6 +134,23 @@ namespace AST {
         virtual void operator()(_up<StructAccess>&) = 0;
         virtual void operator()(_up<ArrayAccess>&) = 0;
     };
+    
+    // using stdlib is such a pain 😭
+    inline LiteralType get_type(const ExprVariant& e)
+    {
+        return std::visit([&](auto& x)
+        {
+            using T = std::decay_t<decltype(x)>; 
+            if constexpr (std::is_same_v<T, Literal> || std::is_same_v<T, Variable>)
+            {
+                return x.result_type; 
+            } 
+            else 
+            {
+                return x->result_type; 
+            }
+        }, e);
+    }
 
 } // namespace AST
 
