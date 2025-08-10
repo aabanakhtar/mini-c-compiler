@@ -93,8 +93,6 @@ llvm::Value* Codegen::gen(const std::unique_ptr<AST::ArrayAccess>& aa)
 
 llvm::Value* Codegen::generate_int_ops(const std::unique_ptr<AST::Binary>& bin)
 {
-    auto type = llvm::Type::getInt32Ty(*context);
-
     const auto left = generate(bin->left);
     const auto right = generate(bin->right);
 
@@ -120,5 +118,25 @@ llvm::Value* Codegen::generate_int_ops(const std::unique_ptr<AST::Binary>& bin)
 
 llvm::Value* Codegen::generate_precise_ops(const std::unique_ptr<AST::Binary>& bin)
 {
-    return nullptr;
+    const auto left = generate(bin->left);
+    const auto right = generate(bin->right);
+
+    if (!left || !right)
+    {
+        return nullptr;
+    }
+
+    switch (bin->op)
+    {
+    case TokenType::PLUS:
+        return builder->CreateFAdd(left, right);
+    case TokenType::MINUS:
+        return builder->CreateFSub(left, right);
+    case TokenType::STAR:
+        return builder->CreateFMul(left, right);
+    case TokenType::SLASH:
+        return builder->CreateFDiv(left, right);
+    default:
+        return nullptr; // shouldn't reach here unless something is weird
+    }
 }
