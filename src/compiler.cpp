@@ -1,5 +1,7 @@
 #include "compiler.h"
 
+#include <iostream>
+
 Codegen::Codegen()
 {
     context = std::make_unique<llvm::LLVMContext>();
@@ -9,9 +11,9 @@ Codegen::Codegen()
 
 llvm::Value *Codegen::gen(const AST::Literal &lit)
 {
-    auto generate_ir = [&](auto&& literal) -> llvm::Value* 
+    auto generate_ir = [&]<typename T0>(T0&& literal) -> llvm::Value*
     {
-        using T = std::decay_t<decltype(literal)>; // get the underlying type
+        using T = std::decay_t<T0>; // get the underlying type
 
         if (std::is_same_v<T, float>)
         {
@@ -66,9 +68,54 @@ llvm::Value* Codegen::gen(const std::unique_ptr<AST::Binary>& bin)
     }
 }
 
+llvm::Value* Codegen::generate_unary_int_ops(const std::unique_ptr<AST::Unary>& un)
+{
+    const auto rhs = generate(un->operand);
+
+    switch (un->op)
+    {
+    case TokenType::MINUS:
+    {
+        const auto type = llvm::Type::getInt32Ty(*context);
+        const auto zero_val = llvm::ConstantInt::get(type, 0, true);
+        return builder->CreateSub(zero_val, rhs);
+    }
+    case TokenType::PLUS:
+        return rhs; // unary + has no effect on the operand
+    default:
+        return nullptr;
+    }
+}
+
+llvm::Value* Codegen::generate_unary_double_ops(const std::unique_ptr<AST::Unary>& un)
+{
+    const auto rhs = generate(un->operand);
+
+    switch (un->op)
+    {
+    case TokenType::MINUS:
+    {
+        const auto type = llvm::Type::getDoubleTy(*context);
+        const auto zero_val = llvm::ConstantFP::get(type, 0.0);
+        return builder->CreateFSub(zero_val, rhs);
+    }
+    case TokenType::PLUS:
+        return rhs; // unary + has no effect on the operand
+    default:
+        return nullptr;
+    }
+}
+
 llvm::Value* Codegen::gen(const std::unique_ptr<AST::Unary>& un)
 {
-    return nullptr;
+    switch (get_type(un->operand))
+    {
+    case AST::LiteralType::INT:
+        return generate_unary_int_ops(un);
+    case AST::LiteralType::DOUBLE:
+        return generate_unary_double_ops(un);
+    default: return nullptr;
+    }
 }
 
 llvm::Value* Codegen::gen(const std::unique_ptr<AST::Assignment>& asn)
@@ -111,6 +158,12 @@ llvm::Value* Codegen::generate_int_ops(const std::unique_ptr<AST::Binary>& bin)
         return builder->CreateMul(left, right);
     case TokenType::SLASH:
         return builder->CreateSDiv(left, right);
+    case TokenType::EQUAL_EQUAL:
+        return builder->CreateICmpEQ(left, right); // integer cmp eq
+    case TokenType::BANG_EQUAL:
+        return builder->CreateICmpNE(left, right); // integer cmp !eq what are these names vro
+    case TokenType::AND:
+    case TokenType::OR:
     default:
         return nullptr; // shouldn't reach here unless something is weird
     }
@@ -136,6 +189,13 @@ llvm::Value* Codegen::generate_precise_ops(const std::unique_ptr<AST::Binary>& b
         return builder->CreateFMul(left, right);
     case TokenType::SLASH:
         return builder->CreateFDiv(left, right);
+    // c is ordered, meaning that NaN is treated as a bogus value and is never equal to anything
+    case TokenType::EQUAL_EQUAL:
+        return builder->CreateFCmpOEQ(left, right); // integer cmp eq
+    case TokenType::BANG_EQUAL:
+        return builder->CreateFCmpONE(left, right); // integer cmp !eq what are these names vro
+    case TokenType::AND:
+    case TokenType::OR: 
     default:
         return nullptr; // shouldn't reach here unless something is weird
     }

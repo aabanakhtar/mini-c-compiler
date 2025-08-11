@@ -23,11 +23,12 @@ public:
         builder->SetInsertPoint(bb);
 
         // create binary
-        AST::Literal lit(0,static_cast<int>(5));
-        AST::Literal l2(0, static_cast<int>(15));
-        const AST::ExprVariant p = std::make_unique<AST::Binary>(0, lit, TokenType::STAR, l2);
-
-        llvm::Value *ret_val = generate(p);
+        AST::Literal lit(0,static_cast<double>(15));
+        AST::Literal l2(0, static_cast<double>(10));
+        l2.result_type = AST::LiteralType::DOUBLE;
+        const AST::ExprVariant p = std::make_unique<AST::Binary>(0, lit, TokenType::EQUAL_EQUAL, l2);
+        const AST::ExprVariant p2 = std::make_unique<AST::Unary>(0, TokenType::PLUS, l2);
+        llvm::Value *ret_val = generate(p2);
         builder->CreateRet(ret_val);
         llvm::verifyFunction(*func);
         mod->print(llvm::outs(), nullptr);
@@ -45,6 +46,8 @@ public:
     llvm::Value* gen(const AST::Variable& var);
 
     llvm::Value* gen(const std::unique_ptr<AST::Binary>& bin);
+    llvm::Value* generate_unary_int_ops(const std::unique_ptr<AST::Unary>& un);
+    llvm::Value* generate_unary_double_ops(const std::unique_ptr<AST::Unary>& un);
     llvm::Value* gen(const std::unique_ptr<AST::Unary>& un);
     llvm::Value* gen(const std::unique_ptr<AST::Assignment>& asn);
     llvm::Value* gen(const std::unique_ptr<AST::Call>& call);
