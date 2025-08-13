@@ -234,7 +234,7 @@ AST::ExprVariant Parser::parse_primary()
     if (check(TokenType::NUMBER))
     {
         auto val = advance(); 
-        auto literal = AST::Literal(val.line, std::stof(val.value));
+        auto literal = AST::Literal(val.line, std::stoi(val.value));
         return literal; 
     }
     else

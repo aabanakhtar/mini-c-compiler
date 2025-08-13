@@ -13,7 +13,7 @@ class Codegen
 public:
     explicit Codegen();
 
-    void test_literal_codegen()
+    void test_expr_gen(const AST::ExprVariant& e)
     {
         llvm::FunctionType *func_type = llvm::FunctionType::get(
             llvm::Type::getInt32Ty(*context), false);
@@ -22,13 +22,7 @@ public:
         llvm::BasicBlock *bb = llvm::BasicBlock::Create(*context, "entry", func);
         builder->SetInsertPoint(bb);
 
-        // create binary
-        AST::Literal lit(0,static_cast<double>(15));
-        AST::Literal l2(0, static_cast<double>(10));
-        l2.result_type = AST::LiteralType::DOUBLE;
-        const AST::ExprVariant p = std::make_unique<AST::Binary>(0, lit, TokenType::EQUAL_EQUAL, l2);
-        const AST::ExprVariant p2 = std::make_unique<AST::Unary>(0, TokenType::PLUS, l2);
-        llvm::Value *ret_val = generate(p2);
+        llvm::Value *ret_val = generate(e);
         builder->CreateRet(ret_val);
         llvm::verifyFunction(*func);
         mod->print(llvm::outs(), nullptr);

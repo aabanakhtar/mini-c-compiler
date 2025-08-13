@@ -5,16 +5,10 @@
 #include <fstream> 
 #include <sstream>
 #include "compiler.h"
+#include "semanalyzer.h"
 
 int main(int argc, char* argv[]) 
 {
-    #if 0
-    if (argc != 2) 
-    {
-        report_err(std::cout, "Expected a filename!"); 
-        return 1;
-    }
-
     const char* filename = "../test/main.c";
     std::fstream file(filename);
     if (!file.is_open())
@@ -31,14 +25,28 @@ int main(int argc, char* argv[])
     {
         print_token(tok); 
     } 
-    
+
+    if (get_err() == ErrorMode::ERR)
+    {
+        return 1;
+    }
+
     Parser parser(lexer.get_tokens());
     auto expr = parser.get_program();
     std::visit(TreePrinter{}, expr); 
 
-    #endif 
+    if (get_err() == ErrorMode::ERR)
+    {
+        return 1;
+    }
 
-    AST::Literal lit(0, 0.5); 
+    SemanticAnalyzer analyzer;
+    auto [ok, e] = analyzer.perform_analysis(expr);
+    if (!ok)
+    {
+        return 1;
+    }
+
     Codegen gen;
-    gen.test_literal_codegen();
+    gen.test_expr_gen(e);
 }

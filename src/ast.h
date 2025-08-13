@@ -29,9 +29,11 @@ namespace AST {
     struct Expression
     {
         std::size_t line;
-        LiteralType result_type = LiteralType::INT; // initalized in semantic analysis
-        Expression(size_t line) : line(line) {} 
+        explicit Expression(const size_t line) : line(line) {}
         virtual ~Expression() = default;
+
+        // TODO: not use mutable lol
+        mutable LiteralType result_type = LiteralType::INT; // initalized in semantic analysis
     };
 
     struct Variable : Expression 
@@ -134,7 +136,35 @@ namespace AST {
         virtual void operator()(_up<StructAccess>&) = 0;
         virtual void operator()(_up<ArrayAccess>&) = 0;
     };
-    
+
+    inline LiteralType get_literal_type(const AST::Literal& lit)
+    {
+        auto get_type_enum = [&]<typename T0>(T0&& x) -> LiteralType
+        {
+            using U = std::decay_t<T0>;
+            if constexpr (std::is_same_v<U, char>)
+            {
+                return LiteralType::CHAR;
+            }
+            else if constexpr (std::is_same_v<U, int>)
+            {
+                return LiteralType::INT;
+            }
+            else if constexpr (std::is_same_v<U, float>)
+            {
+                return LiteralType::FLOAT;
+            }
+            else if constexpr (std::is_same_v<U, double>)
+            {
+                return LiteralType::DOUBLE;
+            }
+
+            return LiteralType::UNKNOWN;
+        };
+
+        return std::visit(get_type_enum, lit.value);
+    }
+
     // using stdlib is such a pain 😭
     inline LiteralType get_type(const ExprVariant& e)
     {
