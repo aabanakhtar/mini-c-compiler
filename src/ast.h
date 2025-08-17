@@ -7,50 +7,74 @@
 #include <string>
 #include "lexer.h"
 
-namespace AST {
-
-    enum class LiteralType 
+namespace AST
+{
+    enum class LiteralType
     {
         INT, CHAR, FLOAT, DOUBLE, CSTRING, UNKNOWN
     };
 
-    using LiteralVariant = std::variant<int, std::string, char, float, double>; 
+    using LiteralVariant = std::variant<int, std::string, char, float, double>;
 
     struct Expression;
     struct Literal;
     struct Binary;
-    struct Unary; 
-    struct Assignment; 
-    struct Call;  
-    struct Variable; 
+    struct Unary;
+    struct Assignment;
+    struct Call;
+    struct Variable;
     struct StructAccess;
     struct ArrayAccess;
 
     struct Expression
     {
         std::size_t line;
-        explicit Expression(const size_t line) : line(line) {}
+
+        explicit Expression(const size_t line) : line(line)
+        {
+        }
+
         virtual ~Expression() = default;
 
         // TODO: not use mutable lol
-        mutable LiteralType result_type = LiteralType::INT; // initalized in semantic analysis
+        mutable LiteralType result_type = LiteralType::INT; // initialized in semantic analysis
     };
 
-    struct Variable : Expression 
+    struct Variable : Expression
     {
         Token name;
 
-        Variable(size_t line, Token name) : Expression(line), name(std::move(name)) {}
-    }; 
+        Variable(const size_t line, Token name) : Expression(line), name(std::move(name))
+        {
+        }
+    };
 
-    struct Literal : Expression 
+    struct Literal : Expression
     {
         LiteralVariant value;
 
-        Literal(size_t line, LiteralVariant value) : Expression(line), value(value) {}
-    }; 
-        
-    template<typename T> using _up = std::unique_ptr<T>;
+        Literal(const size_t line, LiteralVariant value) : Expression(line), value(std::move(value))
+        {
+        }
+
+        Literal(const Literal &other)
+            : Expression(other.line), value(other.value)
+        {
+        }
+
+        Literal& operator=(const Literal& other)
+        {
+            if (this != &other)
+            {
+                line = other.line;
+                value = other.value;
+            }
+            return *this;
+        }
+    };
+
+    template <typename T>
+    using _up = std::unique_ptr<T>;
 
     using ExprVariant = std::variant<
         _up<Unary>,
@@ -69,9 +93,10 @@ namespace AST {
         ExprVariant right;
         TokenType op;
 
-        Binary(std::size_t line, ExprVariant left, TokenType op, ExprVariant right)
+        Binary(const std::size_t line, ExprVariant left, TokenType op, ExprVariant right)
             : Expression(line), left(std::move(left)), right(std::move(right)), op(op)
-        {}
+        {
+        }
     };
 
     struct Unary : Expression
@@ -79,9 +104,10 @@ namespace AST {
         ExprVariant operand;
         TokenType op;
 
-        Unary(std::size_t line, TokenType op, ExprVariant operand)
+        Unary(const std::size_t line, const TokenType op, ExprVariant operand)
             : Expression(line), operand(std::move(operand)), op(op)
-        {}
+        {
+        }
     };
 
     struct Assignment : Expression
@@ -90,9 +116,10 @@ namespace AST {
         ExprVariant rhs;
         TokenType op;
 
-        Assignment(std::size_t line, ExprVariant lhs, TokenType op, ExprVariant rhs)
+        Assignment(const std::size_t line, ExprVariant lhs, const TokenType op, ExprVariant rhs)
             : Expression(line), lhs(std::move(lhs)), rhs(std::move(rhs)), op(op)
-        {}
+        {
+        }
     };
 
     struct Call : Expression
@@ -100,9 +127,10 @@ namespace AST {
         Token func_name;
         std::vector<ExprVariant> args;
 
-        Call(std::size_t line, Token func_name, std::vector<ExprVariant> args)
+        Call(const std::size_t line, Token func_name, std::vector<ExprVariant> args)
             : Expression(line), func_name(std::move(func_name)), args(std::move(args))
-        {}
+        {
+        }
     };
 
     struct StructAccess : Expression
@@ -110,23 +138,26 @@ namespace AST {
         ExprVariant lhs;
         std::string member_name;
 
-        StructAccess(std::size_t line, ExprVariant lhs, std::string member_name)
+        StructAccess(const std::size_t line, ExprVariant lhs, std::string member_name)
             : Expression(line), lhs(std::move(lhs)), member_name(std::move(member_name))
-        {}
+        {
+        }
     };
 
-    struct ArrayAccess : Expression 
+    struct ArrayAccess : Expression
     {
-        ExprVariant lhs; 
-        ExprVariant index; 
+        ExprVariant lhs;
+        ExprVariant index;
 
-        ArrayAccess(size_t line, ExprVariant lhs, ExprVariant index) : 
+        ArrayAccess(size_t line, ExprVariant lhs, ExprVariant index) :
             Expression(line), lhs(std::move(lhs)), index(std::move(index))
-        {}
+        {
+        }
     };
 
     struct ExprVisitor
     {
+        virtual ~ExprVisitor() = default;
         virtual void operator()(_up<Unary>&) = 0;
         virtual void operator()(const Literal&) = 0;
         virtual void operator()(_up<Binary>&) = 0;
@@ -158,6 +189,10 @@ namespace AST {
             {
                 return LiteralType::DOUBLE;
             }
+            else if constexpr (std::is_same_v<U, std::string>)
+            {
+                return LiteralType::CSTRING;
+            }
 
             return LiteralType::UNKNOWN;
         };
@@ -168,19 +203,73 @@ namespace AST {
     // using stdlib is such a pain 😭
     inline LiteralType get_type(const ExprVariant& e)
     {
-        return std::visit([&](auto& x)
+        return std::visit([&]<typename T0>(T0& x)
         {
-            using T = std::decay_t<decltype(x)>; 
+            using T = std::decay_t<T0>;
             if constexpr (std::is_same_v<T, Literal> || std::is_same_v<T, Variable>)
             {
-                return x.result_type; 
-            } 
-            else 
+                return x.result_type;
+            }
+            else
             {
-                return x->result_type; 
+                return x->result_type;
             }
         }, e);
     }
+
+    struct Statement
+    {
+        std::size_t line;
+
+        explicit Statement(const size_t line) : line(line)
+        {
+        }
+
+        virtual ~Statement() = default;
+    };
+
+    struct PrintStatement;
+    struct VariableDecl;
+    struct VariableAssign;
+
+    using StatementVariant = std::variant<
+        _up<PrintStatement>
+    >;
+
+    struct PrintStatement : Statement
+    {
+        AST::ExprVariant value;
+
+        explicit PrintStatement(const std::size_t line, AST::ExprVariant value)
+            : Statement(line), value(std::move(value))
+        {
+        }
+    };
+
+    struct VariableDecl : Statement
+    {
+        std::string name;
+        LiteralType type;
+
+        VariableDecl(const size_t line,std::string name, const LiteralType type)
+             : Statement(line),
+               name(std::move(name)),
+               type(type)
+        {
+        }
+
+    };
+
+    struct VariableAssign : Statement
+    {
+        std::string which;
+        std::unique_ptr<Expression> value;
+
+        explicit VariableAssign(const size_t line, std::string which, std::unique_ptr<Expression> value)
+            : Statement(line), which(std::move(which)), value(std::move(value))
+        {
+        }
+    };
 
 } // namespace AST
 

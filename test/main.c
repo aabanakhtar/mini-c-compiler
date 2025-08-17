@@ -1,1 +1,1 @@
--69
+printf("Hello");

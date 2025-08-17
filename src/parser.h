@@ -19,12 +19,19 @@ struct TreePrinter : AST::ExprVisitor
     virtual void operator()(std::unique_ptr<AST::ArrayAccess>&) override;
 };
 
-class Parser 
+class Parser
 {
-public: 
+public:
     explicit Parser(const std::vector<Token>& tokens) : tokens(tokens) {}
+    using Program = std::vector<AST::StatementVariant>;
 
-    AST::ExprVariant get_program(); 
+    // statements
+    Program get_program();
+    void expect(TokenType t, const std::string& error);
+    AST::StatementVariant parse_statement();
+    AST::StatementVariant parse_printf();
+
+    //AST::ExprVariant get_program();
     AST::ExprVariant parse_assignment();
     AST::ExprVariant parse_logic_or();   
     AST::ExprVariant parse_logic_and();
@@ -36,19 +43,22 @@ public:
     AST::ExprVariant parse_postfix();        // for call, array, struct access: (), [], .
     AST::ExprVariant parse_primary();        // for literals, identifiers, grouped expressions
 
-    void panic(const std::string& why, std::size_t line);
-    bool check(TokenType t);
+    void panic(const std::string& why, std::size_t line) const;
+    bool check(TokenType t) const;
+    // check for various types of tokens in an array of any kind
     bool check(TokenType* t, std::size_t len, TokenType& found);
-    Token advance();   
-private: 
+    Token advance();
+    Token peek() const { return tokens[current_tok < tokens.size() ? current_tok : tokens.size() - 1]; }
+private:
     const std::vector<Token>& tokens;
     size_t current_tok = 0;
+    bool is_panic = false;
 
     template<typename Variant>
     inline size_t get_line(const Variant& node)
     {
-        return std::visit([](const auto& value) -> size_t {
-            using T = std::decay_t<decltype(value)>; // get the base tyhpe
+        return std::visit([]<typename T0>(const T0& value) -> size_t {
+            using T = std::decay_t<T0>; // get the base tyhpe
             if constexpr (std::is_same_v<T, AST::Literal> || std::is_same_v<T, AST::Variable>)
             {
                 return value.line;

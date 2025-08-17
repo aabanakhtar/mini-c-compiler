@@ -16,13 +16,23 @@ public:
         }, variant);
     }
 
+    auto perform_analysis(AST::StatementVariant& variant)
+    {
+        return std::visit([&](auto& v)
+        {
+            return sanalyze(v);
+        }, variant);
+    }
+
 private:
     bool is_binary_op_valid(TokenType operation, AST::LiteralType left, AST::LiteralType right) const;
     bool is_unary_op_valid(TokenType operation, AST::LiteralType right) const;
 
+    // statement analyze
+    std::pair<bool, AST::StatementVariant> sanalyze(std::unique_ptr<AST::PrintStatement>& statement);
 
-    std::pair<bool, AST::ExprVariant> analyze(const AST::Literal& lit) const;
-    std::pair<bool, AST::ExprVariant> analyze(const AST::Variable& var);
+    std::pair<bool, AST::ExprVariant> analyze(AST::Literal& lit);
+    std::pair<bool, AST::ExprVariant> analyze(const AST::Variable& var) const;
 
     std::pair<bool, AST::ExprVariant> analyze(std::unique_ptr<AST::Binary>& bin);
     std::pair<bool, AST::ExprVariant> analyze(std::unique_ptr<AST::Unary>& un);
@@ -40,7 +50,8 @@ private:
 
     const std::unordered_multimap<TokenType,AST::LiteralType>
         unary_operations_rules_LUT = {
-        {TokenType::MINUS, {AST::LiteralType::INT}}
+        {TokenType::MINUS, {AST::LiteralType::INT}},
+        {TokenType::PLUS, {AST::LiteralType::INT}}
     };
 };
 

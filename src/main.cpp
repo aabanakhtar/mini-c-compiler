@@ -33,7 +33,6 @@ int main(int argc, char* argv[])
 
     Parser parser(lexer.get_tokens());
     auto expr = parser.get_program();
-    std::visit(TreePrinter{}, expr); 
 
     if (get_err() == ErrorMode::ERR)
     {
@@ -41,12 +40,12 @@ int main(int argc, char* argv[])
     }
 
     SemanticAnalyzer analyzer;
-    auto [ok, e] = analyzer.perform_analysis(expr);
+    auto [ok, e] = analyzer.perform_analysis(expr[0]);
     if (!ok)
     {
         return 1;
     }
 
-    Codegen gen;
-    gen.test_expr_gen(e);
+    //Codegen gen;
+    //gen.test_expr_gen(e);
 }

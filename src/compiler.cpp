@@ -25,7 +25,7 @@ llvm::Value *Codegen::gen(const AST::Literal &lit)
         else if (std::is_same_v<T, double>)
         {
             auto type = llvm::Type::getDoubleTy(*context); 
-            return llvm::ConstantFP::get(type, literal); // doobles work with constant FP
+            return llvm::ConstantFP::get(type, literal); // doubles work with constant FP
         }
         else if (std::is_same_v<T, int>)
         {

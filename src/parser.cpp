@@ -92,6 +92,42 @@ void TreePrinter::operator()(std::unique_ptr<AST::ArrayAccess>& aa)
     indent_level -= 2;
 }
 
+Parser::Program Parser::get_program()
+{
+    auto p = Program{};
+    p.push_back(parse_printf());
+    return p;
+}
+
+void Parser::expect(const TokenType t, const std::string& error)
+{
+    if (!check(t))
+    {
+        advance();
+        report_err(std::cout, error);
+        is_panic = true;
+    }
+
+    advance();
+}
+
+AST::StatementVariant Parser::parse_statement()
+{
+    return parse_printf();
+}
+
+AST::StatementVariant Parser::parse_printf()
+{
+    std::size_t line = advance().line; // printf
+    expect(TokenType::LEFT_PAREN, "Expected '(' after printf");
+    auto expr = parse_primary();
+    expect(TokenType::RIGHT_PAREN, "Expected ')' after printf.");
+    expect(TokenType::SEMICOLON, "Expected ';' after printf.");
+
+    auto print = std::make_unique<AST::PrintStatement>(line, std::move(expr));
+    return print;
+}
+
 void TreePrinter::operator()(const AST::Literal& lit)
 {
     indent();
@@ -100,10 +136,12 @@ void TreePrinter::operator()(const AST::Literal& lit)
     }, lit.value);
 }
 
+/*
 AST::ExprVariant Parser::get_program()
 {
     return parse_assignment(); 
 }
+*/
 
 AST::ExprVariant Parser::parse_assignment()
 {
@@ -211,10 +249,9 @@ AST::ExprVariant Parser::parse_multiplicative()
 
 AST::ExprVariant Parser::parse_unary()
 {
-    static TokenType unary_ops[] = {TokenType::MINUS, TokenType::STAR, TokenType::PLUS}; 
+    static TokenType unary_ops[] = {TokenType::MINUS, TokenType::STAR, TokenType::PLUS};
 
-    TokenType found_token; 
-    if (check(unary_ops, sizeof(unary_ops) / sizeof(TokenType), found_token)) 
+    if (TokenType found_token; check(unary_ops, sizeof(unary_ops) / sizeof(TokenType), found_token))
     {
         auto line = advance().line; 
         return std::make_unique<AST::Unary>(line, found_token, parse_unary()); 
@@ -231,30 +268,39 @@ AST::ExprVariant Parser::parse_postfix()
 
 AST::ExprVariant Parser::parse_primary()
 {
-    if (check(TokenType::NUMBER))
+    if (check(TokenType::NUMBER) || check(TokenType::STRING))
     {
-        auto val = advance(); 
-        auto literal = AST::Literal(val.line, std::stoi(val.value));
-        return literal; 
+        const auto val = advance();
+        AST::Literal literal(0, 0);
+
+        if (val.type == TokenType::STRING)
+        {
+            literal = AST::Literal(val.line, val.value);
+        }
+        else
+        {
+            literal = AST::Literal(val.line, std::stoi(val.value));
+        }
+
+        return literal;
     }
     else
     {
-        auto offender = advance();  // get the offending token
-        panic("Failed to parse expression!", offender.line); 
+        const auto offender = advance();  // get the offending token
+        panic("Failed to parse expression!", offender.line);
         return AST::Literal(0, 0);
     }
 }
 
-void Parser::panic(const std::string& why, std::size_t line) 
+void Parser::panic(const std::string& why, const std::size_t line) const
 {
     std::ostringstream ss; 
     ss << "FAILED PARSE! " << why << " on line: " << line << ".\n";
     report_err(std::cout, ss.str());
-    std::exit(1); // TODO: synchronize
 }
 
 
-bool Parser::check(TokenType t)
+bool Parser::check(const TokenType t) const
 {
     if (tokens[current_tok].type == t) 
     {

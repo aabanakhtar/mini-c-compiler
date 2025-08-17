@@ -47,14 +47,34 @@ bool SemanticAnalyzer::is_unary_op_valid(TokenType operation, AST::LiteralType r
     return false;
 }
 
-std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(const AST::Literal& lit) const
+std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_ptr<AST::PrintStatement>& statement)
+{
+    auto [ok, s] = perform_analysis(statement->value);
+    if (!ok)
+    {
+        // error already addressed
+        return {false, AST::StatementVariant{}};
+    }
+
+    if (AST::get_type(s) != AST::LiteralType::CSTRING)
+    {
+        report_err(std::cout, "Expected string in print statement!");
+        return {false, AST::StatementVariant{}};
+    }
+
+    // add rich information
+    statement->value = std::move(s);
+    return {ok, std::move(statement)};
+}
+
+std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(AST::Literal& lit)
 {
     // just add type info, not much else needed
     lit.result_type = AST::get_literal_type(lit);
-    return std::make_pair(true, lit);
+    return std::make_pair(true, std::move(lit));
 }
 
-std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(const AST::Variable& var)
+std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(const AST::Variable& var) const
 {
     abort();
 }

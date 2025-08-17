@@ -18,14 +18,20 @@ public:
         llvm::FunctionType *func_type = llvm::FunctionType::get(
             llvm::Type::getInt32Ty(*context), false);
         llvm::Function *func = llvm::Function::Create(
-            func_type, llvm::Function::ExternalLinkage, "test", mod.get());
+            func_type, llvm::Function::ExternalLinkage, "main", mod.get());
         llvm::BasicBlock *bb = llvm::BasicBlock::Create(*context, "entry", func);
         builder->SetInsertPoint(bb);
 
         llvm::Value *ret_val = generate(e);
         builder->CreateRet(ret_val);
+        // make sure stuff is right
         llvm::verifyFunction(*func);
         mod->print(llvm::outs(), nullptr);
+        // check if its generating good IR
+        if (llvm::verifyModule(*mod, &llvm::errs()))
+        {
+            llvm::errs() << "❌ Module verification failed!\n";
+        }
     }   
 
     // useful visitor impl
