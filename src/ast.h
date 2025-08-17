@@ -36,8 +36,7 @@ namespace AST
 
         virtual ~Expression() = default;
 
-        // TODO: not use mutable lol
-        mutable LiteralType result_type = LiteralType::INT; // initialized in semantic analysis
+        LiteralType result_type = LiteralType::UNKNOWN; // initialized in semantic analysis
     };
 
     struct Variable : Expression
@@ -60,6 +59,7 @@ namespace AST
         Literal(const Literal &other)
             : Expression(other.line), value(other.value)
         {
+            result_type = other.result_type;
         }
 
         Literal& operator=(const Literal& other)
@@ -68,6 +68,7 @@ namespace AST
             {
                 line = other.line;
                 value = other.value;
+                result_type = other.result_type;
             }
             return *this;
         }
