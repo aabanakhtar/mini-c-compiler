@@ -13,7 +13,7 @@ class Codegen
 public:
     explicit Codegen();
 
-    void test_expr_gen(const AST::ExprVariant& e)
+    void test_expr_gen(const std::vector<AST::StatementVariant>& sts)
     {
         llvm::FunctionType *func_type = llvm::FunctionType::get(
             llvm::Type::getInt32Ty(*context), false);
@@ -22,8 +22,11 @@ public:
         llvm::BasicBlock *bb = llvm::BasicBlock::Create(*context, "entry", func);
         builder->SetInsertPoint(bb);
 
-        llvm::Value *ret_val = generate(e);
-        builder->CreateRet(ret_val);
+        generate(sts[0]);
+
+        llvm::Type* i32_ty = llvm::Type::getInt32Ty(*context);
+        llvm::Value* int0 = llvm::ConstantInt::get(i32_ty, 0, true);
+        builder->CreateRet(int0);
         // make sure stuff is right
         llvm::verifyFunction(*func);
         mod->print(llvm::outs(), nullptr);
@@ -33,6 +36,13 @@ public:
             llvm::errs() << "Module verification failed!\n";
         }
     }   
+
+    llvm::Instruction* generate(const AST::StatementVariant& s)
+    {
+        static llvm::Instruction* last_visited = nullptr;
+        last_visited = this->sgen(std::get<AST::_up<AST::PrintStatement>>(s));
+        return last_visited;
+    }
 
     // useful visitor impl
     llvm::Value* generate(const AST::ExprVariant& e) 
@@ -45,17 +55,21 @@ public:
     auto printf_decl() const
     {
         // 0 = default address space (this might be used for other things like gpu memory for example)
-        llvm::FunctionType* return_type = llvm::FunctionType::get(llvm::Type::getInt32Ty(*context),
+        static llvm::FunctionType* prototype = llvm::FunctionType::get(llvm::Type::getInt32Ty(*context),
             llvm::PointerType::get(llvm::Type::getInt8Ty(*context), 0), true);
-        llvm::Function *printf_func = llvm::Function::Create(
-            return_type,
+        static llvm::Function* printf_func = llvm::Function::Create(
+            prototype,
             llvm::Function::ExternalLinkage, // external function
             "printf",
             *mod
         );
-
-        return printf_func;
+        static llvm::FunctionCallee printfCallee = mod->getOrInsertFunction(
+            "printf", prototype
+        );
+        return printfCallee;
     }
+
+    llvm::Instruction* sgen(const std::unique_ptr<AST::PrintStatement>& s);
 
     llvm::Value* gen(const AST::Literal& lit);
     llvm::Value* gen(const AST::Variable& var);

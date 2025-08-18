@@ -40,12 +40,11 @@ int main(int argc, char* argv[])
     }
 
     SemanticAnalyzer analyzer;
-    auto [ok, e] = analyzer.perform_analysis(expr[1]);
-    if (!ok)
+    for (auto& s : expr)
     {
-        return 1;
+        analyzer.perform_analysis(s);
     }
 
-    //Codegen gen;
-    //gen.test_expr_gen(e);
+    Codegen gen;
+    gen.test_expr_gen(expr);
 }

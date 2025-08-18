@@ -9,6 +9,14 @@ Codegen::Codegen()
     builder = std::make_unique<llvm::IRBuilder<>>(*context);
 }
 
+llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::PrintStatement>& s)
+{
+    auto str_arg = std::get<AST::Literal>(s->value);
+    const auto as_str = std::get<std::string>(str_arg.value);
+    llvm::Value* as_llvm = builder->CreateGlobalStringPtr(as_str);
+    return builder->CreateCall(printf_decl(), {as_llvm});
+}
+
 llvm::Value *Codegen::gen(const AST::Literal &lit)
 {
     auto generate_ir = [&]<typename T0>(T0&& literal) -> llvm::Value*
