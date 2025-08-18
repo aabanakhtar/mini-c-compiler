@@ -22,7 +22,11 @@ public:
         llvm::BasicBlock *bb = llvm::BasicBlock::Create(*context, "entry", func);
         builder->SetInsertPoint(bb);
 
-        generate(sts[0]);
+        for (const auto& s : sts)
+        {
+            // generate the IR for each statement
+            generate(s);
+        }
 
         llvm::Type* i32_ty = llvm::Type::getInt32Ty(*context);
         llvm::Value* int0 = llvm::ConstantInt::get(i32_ty, 0, true);

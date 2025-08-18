@@ -42,7 +42,13 @@ int main(int argc, char* argv[])
     SemanticAnalyzer analyzer;
     for (auto& s : expr)
     {
-        analyzer.perform_analysis(s);
+        auto [ok, _] = analyzer.perform_analysis(s);
+        s = std::move(_);
+        if (!ok) 
+        {
+            std::cout << "Faile dparsing!";
+            return 1;
+        }
     }
 
     Codegen gen;
