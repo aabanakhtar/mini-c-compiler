@@ -8,7 +8,7 @@ Lexer::Lexer(const std::string &file)
 {
 }
 
-const std::vector<Token>& Lexer::get_tokens()
+const std::vector<Token>& Lexer::lex()
 {
     for (curr_char = 0; curr_char < file.size();) 
     {

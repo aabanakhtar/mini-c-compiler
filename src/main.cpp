@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
     std::cout << file_contents << "\n"; 
 
     Lexer lexer(file_contents); 
-    auto toks = lexer.get_tokens(); 
+    auto toks = lexer.lex();
     for (auto& tok : toks) 
     {
         print_token(tok); 
@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
     }
 
     SemanticAnalyzer analyzer;
-    auto [ok, e] = analyzer.perform_analysis(expr[0]);
+    auto [ok, e] = analyzer.perform_analysis(expr[1]);
     if (!ok)
     {
         return 1;

@@ -67,7 +67,7 @@ std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_pt
     return {ok, std::move(statement)};
 }
 
-std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(AST::Literal& lit)
+std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(AST::Literal& lit) const
 {
     // just add type info, not much else needed
     lit.result_type = AST::get_literal_type(lit);

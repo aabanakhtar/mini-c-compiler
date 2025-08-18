@@ -22,7 +22,10 @@ struct TreePrinter : AST::ExprVisitor
 class Parser
 {
 public:
-    explicit Parser(const std::vector<Token>& tokens) : tokens(tokens) {}
+    explicit Parser(const std::vector<Token>& tokens) : tokens(tokens)
+    {
+        int a = 3;
+    }
     using Program = std::vector<AST::StatementVariant>;
 
     // statements
@@ -58,7 +61,7 @@ private:
     inline size_t get_line(const Variant& node)
     {
         return std::visit([]<typename T0>(const T0& value) -> size_t {
-            using T = std::decay_t<T0>; // get the base tyhpe
+            using T = std::decay_t<T0>; // get the base type
             if constexpr (std::is_same_v<T, AST::Literal> || std::is_same_v<T, AST::Variable>)
             {
                 return value.line;

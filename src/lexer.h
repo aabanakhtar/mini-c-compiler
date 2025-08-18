@@ -75,7 +75,8 @@ class Lexer
 public: 
     explicit Lexer(const std::string& file);
 
-    const std::vector<Token>& get_tokens();
+    const std::vector<Token>& lex();
+    const std::vector<Token>& get_tokens() const { return tokens; }
 private:
     bool check(char c);
     const char consume(); 

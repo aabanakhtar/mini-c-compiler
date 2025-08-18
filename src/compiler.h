@@ -18,7 +18,7 @@ public:
         llvm::FunctionType *func_type = llvm::FunctionType::get(
             llvm::Type::getInt32Ty(*context), false);
         llvm::Function *func = llvm::Function::Create(
-            func_type, llvm::Function::ExternalLinkage, "main", mod.get());
+            func_type, llvm::Function::ExternalLinkage, "main", *mod);
         llvm::BasicBlock *bb = llvm::BasicBlock::Create(*context, "entry", func);
         builder->SetInsertPoint(bb);
 
@@ -30,7 +30,7 @@ public:
         // check if its generating good IR
         if (llvm::verifyModule(*mod, &llvm::errs()))
         {
-            llvm::errs() << "❌ Module verification failed!\n";
+            llvm::errs() << "Module verification failed!\n";
         }
     }   
 
@@ -40,6 +40,21 @@ public:
         static llvm::Value* last_visited; 
         std::visit([&](auto& x) { last_visited = this->gen(x); }, e);
         return last_visited;
+    }
+
+    auto printf_decl() const
+    {
+        // 0 = default address space (this might be used for other things like gpu memory for example)
+        llvm::FunctionType* return_type = llvm::FunctionType::get(llvm::Type::getInt32Ty(*context),
+            llvm::PointerType::get(llvm::Type::getInt8Ty(*context), 0), true);
+        llvm::Function *printf_func = llvm::Function::Create(
+            return_type,
+            llvm::Function::ExternalLinkage, // external function
+            "printf",
+            *mod
+        );
+
+        return printf_func;
     }
 
     llvm::Value* gen(const AST::Literal& lit);

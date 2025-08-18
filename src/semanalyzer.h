@@ -31,7 +31,7 @@ private:
     // statement analyze
     std::pair<bool, AST::StatementVariant> sanalyze(std::unique_ptr<AST::PrintStatement>& statement);
 
-    std::pair<bool, AST::ExprVariant> analyze(AST::Literal& lit);
+    std::pair<bool, AST::ExprVariant> analyze(AST::Literal& lit) const;
     std::pair<bool, AST::ExprVariant> analyze(const AST::Variable& var) const;
 
     std::pair<bool, AST::ExprVariant> analyze(std::unique_ptr<AST::Binary>& bin);

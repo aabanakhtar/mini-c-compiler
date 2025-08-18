@@ -95,7 +95,14 @@ void TreePrinter::operator()(std::unique_ptr<AST::ArrayAccess>& aa)
 Parser::Program Parser::get_program()
 {
     auto p = Program{};
-    p.push_back(parse_printf());
+    while (current_tok < tokens.size() - 1)
+    {
+        p.push_back(parse_printf());
+        if (is_panic)
+        {
+            // TODO: handlePanic();
+        }
+    }
     return p;
 }
 
@@ -103,7 +110,7 @@ void Parser::expect(const TokenType t, const std::string& error)
 {
     if (!check(t))
     {
-        advance();
+        advance(); // get rid of this ting
         report_err(std::cout, error);
         is_panic = true;
     }
@@ -120,10 +127,9 @@ AST::StatementVariant Parser::parse_printf()
 {
     std::size_t line = advance().line; // printf
     expect(TokenType::LEFT_PAREN, "Expected '(' after printf");
-    auto expr = parse_primary();
+    auto expr = parse_assignment();
     expect(TokenType::RIGHT_PAREN, "Expected ')' after printf.");
     expect(TokenType::SEMICOLON, "Expected ';' after printf.");
-
     auto print = std::make_unique<AST::PrintStatement>(line, std::move(expr));
     return print;
 }
@@ -328,7 +334,7 @@ bool Parser::check(TokenType* types, std::size_t len, TokenType& found)
 
 Token Parser::advance()
 {
-    if (current_tok + 1 < tokens.size() - 1)
+    if (current_tok < tokens.size() - 1)
     {
         return tokens[current_tok++]; 
     }
