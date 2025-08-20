@@ -1,2 +1,2 @@
-struct qwerty j = ;
+int j = 0;
 printf("foo");

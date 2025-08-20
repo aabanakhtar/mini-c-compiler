@@ -7,6 +7,11 @@ Codegen::Codegen()
     context = std::make_unique<llvm::LLVMContext>();
     mod = std::make_unique<llvm::Module>("main", *context);
     builder = std::make_unique<llvm::IRBuilder<>>(*context);
+
+    // map default types
+    type_to_llvm_ty["int"]   = llvm::Type::getInt32Ty(*context);
+    type_to_llvm_ty["char"]  = llvm::Type::getInt8Ty(*context);
+    type_to_llvm_ty["void"]  = llvm::Type::getVoidTy(*context);
 }
 
 llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::PrintStatement>& s)
@@ -15,6 +20,12 @@ llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::PrintStatement>& s)
     const auto as_str = std::get<std::string>(str_arg.value);
     llvm::Value* as_llvm = builder->CreateGlobalStringPtr(as_str);
     return builder->CreateCall(printf_decl(), {as_llvm});
+}
+
+llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::VariableDecl>& a)
+{
+    llvm::Instruction* alloca = builder->CreateAlloca(type_to_llvm_ty[a->type], nullptr, a->name);
+    return alloca;
 }
 
 llvm::Value *Codegen::gen(const AST::Literal &lit)

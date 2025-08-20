@@ -119,7 +119,7 @@ const Token& Parser::expect(const TokenType t, const std::string& error)
     return advance();
 }
 
-bool Parser::is_type(const Token& tok) const
+bool Parser::is_type(const Token& tok)
 {
     switch (tok.type) {
     case TokenType::INT:
@@ -128,7 +128,8 @@ bool Parser::is_type(const Token& tok) const
         return true;
     // must have a ident after the struct keyword
     case TokenType::STRUCT:
-        assert(current_tok + 1 < tokens.size());
+        // look 2 ahead lol
+        if (current_tok + 1 >= tokens.size()) return false;
         return tokens[current_tok + 1].type == TokenType::IDENTIFIER;
     default:
         return false;

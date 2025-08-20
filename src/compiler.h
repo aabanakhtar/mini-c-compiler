@@ -44,7 +44,7 @@ public:
     llvm::Instruction* generate(const AST::StatementVariant& s)
     {
         static llvm::Instruction* last_visited = nullptr;
-        last_visited = this->sgen(std::get<AST::_up<AST::PrintStatement>>(s));
+        std::visit([&](auto& x) { last_visited = this->sgen(x); }, s);
         return last_visited;
     }
 
@@ -99,7 +99,9 @@ private:
     // the "translation unit"
     std::unique_ptr<llvm::Module> mod; 
     // keep track of stuff
-    std::unordered_map<std::string, llvm::Value*> names; 
+    std::unordered_map<std::string, llvm::Value*> names;
+    // llvm types for creating variables
+    std::unordered_map<std::string, llvm::Type*> type_to_llvm_ty;
 };
 
 

@@ -50,7 +50,7 @@ public:
     bool check(TokenType t) const;
     const Token& expect(TokenType t, const std::string& error);
     // checks if the token can represent the start of a initialization for a var
-    bool is_type(const Token& tok) const;
+    bool is_type(const Token& tok);
     // check for various types of tokens in an array of any kind
     bool check(TokenType* t, std::size_t len, TokenType& found) const;
     const Token& advance();

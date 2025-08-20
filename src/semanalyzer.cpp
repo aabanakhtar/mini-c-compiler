@@ -4,6 +4,7 @@
 #include <sstream>
 
 #include "error.h"
+#include "parser.h"
 
 bool SemanticAnalyzer::is_binary_op_valid(TokenType operation, AST::LiteralType left, AST::LiteralType right) const
 {
@@ -72,6 +73,13 @@ std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_pt
     auto [ok, s] = perform_analysis(statement->value);
     if (!ok)
     {
+        return {false, AST::StatementVariant{}};
+    }
+
+    // TODO: chekc if there is a valid type with structs and stuff
+    if (!std::unordered_set<std::string>{"int", "char"}.contains(statement->type))
+    {
+        report_err(std::cout, "Compiler todo: support more types. for now, int and char are supported");
         return {false, AST::StatementVariant{}};
     }
 
