@@ -234,7 +234,8 @@ namespace AST
     struct VariableAssign;
 
     using StatementVariant = std::variant<
-        _up<PrintStatement>
+        _up<PrintStatement>,
+        _up<VariableDecl>
     >;
 
     struct PrintStatement : Statement
@@ -250,12 +251,14 @@ namespace AST
     struct VariableDecl : Statement
     {
         std::string name;
-        LiteralType type;
+        std::string type;
+        ExprVariant value;
 
-        VariableDecl(const size_t line,std::string name, const LiteralType type)
+        VariableDecl(const size_t line, const std::string& name, const std::string& type, ExprVariant& value)
              : Statement(line),
-               name(std::move(name)),
-               type(type)
+               name(name),
+               type(type),
+               value(std::move(value))
         {
         }
 

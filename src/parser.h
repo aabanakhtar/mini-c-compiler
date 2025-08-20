@@ -30,9 +30,9 @@ public:
 
     // statements
     Program get_program();
-    void expect(TokenType t, const std::string& error);
     AST::StatementVariant parse_statement();
     AST::StatementVariant parse_printf();
+    AST::StatementVariant parse_variable_declaration();
 
     //AST::ExprVariant get_program();
     AST::ExprVariant parse_assignment();
@@ -48,9 +48,12 @@ public:
 
     void panic(const std::string& why, std::size_t line) const;
     bool check(TokenType t) const;
+    const Token& expect(TokenType t, const std::string& error);
+    // checks if the token can represent the start of a initialization for a var
+    bool is_type(const Token& tok) const;
     // check for various types of tokens in an array of any kind
-    bool check(TokenType* t, std::size_t len, TokenType& found);
-    Token advance();
+    bool check(TokenType* t, std::size_t len, TokenType& found) const;
+    const Token& advance();
     Token peek() const { return tokens[current_tok < tokens.size() ? current_tok : tokens.size() - 1]; }
 private:
     const std::vector<Token>& tokens;

@@ -97,16 +97,17 @@ Parser::Program Parser::get_program()
     auto p = Program{};
     while (current_tok < tokens.size() - 1)
     {
-        p.push_back(parse_printf());
+        p.push_back(parse_statement());
         if (is_panic)
         {
             // TODO: handlePanic();
+            break;
         }
     }
     return p;
 }
 
-void Parser::expect(const TokenType t, const std::string& error)
+const Token& Parser::expect(const TokenType t, const std::string& error)
 {
     if (!check(t))
     {
@@ -115,11 +116,31 @@ void Parser::expect(const TokenType t, const std::string& error)
         is_panic = true;
     }
 
-    advance();
+    return advance();
+}
+
+bool Parser::is_type(const Token& tok) const
+{
+    switch (tok.type) {
+    case TokenType::INT:
+    case TokenType::VOID:
+    case TokenType::CHAR:
+        return true;
+    // must have a ident after the struct keyword
+    case TokenType::STRUCT:
+        return peek().type == TokenType::IDENTIFIER;
+    default:
+        return false;
+    }
 }
 
 AST::StatementVariant Parser::parse_statement()
 {
+    if (is_type(peek()))
+    {
+        return parse_variable_declaration();
+    }
+
     return parse_printf();
 }
 
@@ -132,6 +153,22 @@ AST::StatementVariant Parser::parse_printf()
     expect(TokenType::SEMICOLON, "Expected ';' after printf.");
     auto print = std::make_unique<AST::PrintStatement>(line, std::move(expr));
     return print;
+}
+
+AST::StatementVariant Parser::parse_variable_declaration()
+{
+    const auto identifier = advance();
+    auto type = identifier.value;
+    // make sure to get the actual typename from the second one
+    if (identifier.type == TokenType::STRUCT)
+    {
+        type = expect(TokenType::IDENTIFIER, "Expected an identifier after 'struct.'").value;
+    }
+    auto name = expect(TokenType::IDENTIFIER, "Expected a variable name.").value;
+    expect(TokenType::EQUAL, "Expected '=' for assignment.");
+    auto value = parse_assignment(); // top level expression from C standard
+    expect(TokenType::SEMICOLON, "Expected ';' after assignment.");
+    return std::make_unique<AST::VariableDecl>(identifier.line, name, type, value);
 }
 
 void TreePrinter::operator()(const AST::Literal& lit)
@@ -317,7 +354,7 @@ bool Parser::check(const TokenType t) const
 }
 
 
-bool Parser::check(TokenType* types, std::size_t len, TokenType& found)
+bool Parser::check(TokenType* types, std::size_t len, TokenType& found) const
 {
     for (std::size_t i = 0; i < len; ++i)
     {
@@ -332,7 +369,7 @@ bool Parser::check(TokenType* types, std::size_t len, TokenType& found)
 }
 
 
-Token Parser::advance()
+const Token& Parser::advance()
 {
     if (current_tok < tokens.size() - 1)
     {

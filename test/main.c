@@ -1,2 +1,1 @@
-printf("K");
-printf("kowlculator");
+int i = 3;printf("foo");
