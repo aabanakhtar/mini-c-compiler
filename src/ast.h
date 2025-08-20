@@ -275,6 +275,20 @@ namespace AST
         }
     };
 
+    inline std::string literal_type_to_str(const LiteralType literal)
+    {
+        switch (literal)
+        {
+        case LiteralType::CHAR: return "char";
+        case LiteralType::INT: return "int";
+        case LiteralType::FLOAT: return "float";
+        case LiteralType::DOUBLE: return "double";
+        case LiteralType::CSTRING: return "cstring";
+        case LiteralType::UNKNOWN: return "unknown";
+        }
+
+        return "";
+    }
 } // namespace AST
 
 #endif // AST_H

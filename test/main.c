@@ -1,1 +1,2 @@
-int i = 3;printf("foo");
+struct qwerty j = ;
+printf("foo");

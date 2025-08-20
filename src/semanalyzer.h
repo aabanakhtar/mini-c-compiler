@@ -1,6 +1,8 @@
 #ifndef SEMANALYZER_H
 #define SEMANALYZER_H
 
+#include <unordered_set>
+
 #include "ast.h"
 
 class SemanticAnalyzer
@@ -27,10 +29,11 @@ public:
 private:
     bool is_binary_op_valid(TokenType operation, AST::LiteralType left, AST::LiteralType right) const;
     bool is_unary_op_valid(TokenType operation, AST::LiteralType right) const;
+    std::unordered_set<std::string> declared_variables;
 
     // statement analyze
     std::pair<bool, AST::StatementVariant> sanalyze(std::unique_ptr<AST::PrintStatement>& statement);
-    std::pair<bool, AST::StatementVariant> sanalyze(std::unique_ptr<AST::VariableDecl>& statement){ return {};}
+    std::pair<bool, AST::StatementVariant> sanalyze(std::unique_ptr<AST::VariableDecl>& statement);
 
     std::pair<bool, AST::ExprVariant> analyze(AST::Literal& lit) const;
     std::pair<bool, AST::ExprVariant> analyze(const AST::Variable& var) const;

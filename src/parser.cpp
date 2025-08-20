@@ -128,7 +128,8 @@ bool Parser::is_type(const Token& tok) const
         return true;
     // must have a ident after the struct keyword
     case TokenType::STRUCT:
-        return peek().type == TokenType::IDENTIFIER;
+        assert(current_tok + 1 < tokens.size());
+        return tokens[current_tok + 1].type == TokenType::IDENTIFIER;
     default:
         return false;
     }

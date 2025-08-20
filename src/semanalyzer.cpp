@@ -67,6 +67,33 @@ std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_pt
     return {ok, std::move(statement)};
 }
 
+std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_ptr<AST::VariableDecl>& statement)
+{
+    auto [ok, s] = perform_analysis(statement->value);
+    if (!ok)
+    {
+        return {false, AST::StatementVariant{}};
+    }
+
+    if (AST::literal_type_to_str(AST::get_type(s)) != statement->type)
+    {
+        report_err(std::cout, "Expected matching types in variable declaration");
+        return {false, AST::StatementVariant{}};
+    }
+
+    // no duplicate variables TODO: refactor for shadowing in scopes and stuff
+    if (declared_variables.contains(statement->name))
+    {
+        report_err(std::cout, "Expected a non-duplicate identifier for a variable.");
+        return {false, AST::StatementVariant{}};
+    }
+
+    declared_variables.insert(statement->name);
+    // add the $$$
+    statement->value = std::move(s);
+    return {true, std::move(statement)};
+}
+
 std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(AST::Literal& lit) const
 {
     // just add type info, not much else needed
