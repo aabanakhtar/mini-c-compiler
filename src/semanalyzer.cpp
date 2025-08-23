@@ -6,7 +6,7 @@
 #include "error.h"
 #include "parser.h"
 
-bool SemanticAnalyzer::is_binary_op_valid(TokenType operation, AST::LiteralType left, AST::LiteralType right) const
+bool SemanticAnalyzer::is_binary_op_valid(const TokenType operation, const std::string& left_t, const std::string& right_t) const
 {
     const auto range = binary_operations_rules_LUT.equal_range(operation);
     // key doesn't exist ig
@@ -18,8 +18,8 @@ bool SemanticAnalyzer::is_binary_op_valid(TokenType operation, AST::LiteralType 
     for (auto it = range.first; it != range.second; ++it)
     {
         // check if an existing entry exists
-        if (const auto [type1, type2] = it->second; left == type1 && right == type2
-             || left == type2 && right == type1)
+        if (const auto [type1, type2] = it->second; left_t == type1 && right_t == type2
+             || left_t == type2 && right_t == type1)
         {
             return true;
         }
@@ -28,7 +28,7 @@ bool SemanticAnalyzer::is_binary_op_valid(TokenType operation, AST::LiteralType 
     return false;
 }
 
-bool SemanticAnalyzer::is_unary_op_valid(TokenType operation, AST::LiteralType right) const
+bool SemanticAnalyzer::is_unary_op_valid(const TokenType operation, const std::string& right_t) const
 {
     const auto range = unary_operations_rules_LUT.equal_range(operation);
     if (range.first == range.second)
@@ -39,7 +39,7 @@ bool SemanticAnalyzer::is_unary_op_valid(TokenType operation, AST::LiteralType r
     for (auto it = range.first; it != range.second; ++it)
     {
         // if the types match
-        if (const auto type = it->second; type == right)
+        if (const auto type = it->second; type == right_t)
         {
             return true;
         }
@@ -57,7 +57,7 @@ std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_pt
         return {false, AST::StatementVariant{}};
     }
 
-    if (AST::get_type(s) != AST::LiteralType::CSTRING)
+    if (AST::get_type(s) != "const char*")
     {
         report_err(std::cout, "Expected string in print statement!");
         return {false, AST::StatementVariant{}};
@@ -76,14 +76,14 @@ std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_pt
         return {false, AST::StatementVariant{}};
     }
 
-    // TODO: chekc if there is a valid type with structs and stuff
+    // TODO: check if there is a valid type with structs and stuff
     if (!std::unordered_set<std::string>{"int", "char"}.contains(statement->type))
     {
         report_err(std::cout, "Compiler todo: support more types. for now, int and char are supported");
         return {false, AST::StatementVariant{}};
     }
 
-    if (AST::literal_type_to_str(AST::get_type(s)) != statement->type)
+    if (AST::get_type(s) != statement->type)
     {
         report_err(std::cout, "Expected matching types in variable declaration");
         return {false, AST::StatementVariant{}};
@@ -97,8 +97,21 @@ std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_pt
     }
 
     declared_variables.insert(statement->name);
+    declared_variable_types[statement->name] = statement->type;
     // add the $$$
     statement->value = std::move(s);
+    return {true, std::move(statement)};
+}
+
+std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_ptr<AST::ExpressionStatement>& statement)
+{
+    auto [ok, e] = perform_analysis(statement->expr); // pretty simple for this, mostly handled by other routines
+    if (!ok)
+    {
+        return {false, AST::StatementVariant{}};
+    }
+
+    statement->expr = std::move(e); // add richer info $$$$$$
     return {true, std::move(statement)};
 }
 
@@ -109,9 +122,18 @@ std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(AST::Literal& lit) c
     return std::make_pair(true, std::move(lit));
 }
 
-std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(const AST::Variable& var) const
+std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(AST::Variable& var)
 {
-    abort();
+    if (!declared_variables.contains(var.name.value))
+    {
+        std::ostringstream ss;
+        ss << "undefined variable: " << var.name.value << "\n";
+        report_err(std::cout, ss.str());
+        return {false, AST::Literal{0, 0}};
+    }
+
+    var.result_type = declared_variable_types[var.name.value];
+    return {true, var};
 }
 
 std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(std::unique_ptr<AST::Binary>& bin)
@@ -124,7 +146,7 @@ std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(std::unique_ptr<AST:
     {
         return {false, AST::Literal{0, 0}};
     }
-    // look up the operation and see if its not valid
+    // look up the operation and see if it's not valid
     if (!is_binary_op_valid(bin->op, AST::get_type(expr_1), AST::get_type(expr_2)))
     {
         std::ostringstream ss;
@@ -162,8 +184,34 @@ std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(std::unique_ptr<AST:
     return {true, std::move(un)};
 }
 
-std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(const std::unique_ptr<AST::Assignment>& asn)
+std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(std::unique_ptr<AST::Assignment>& asn)
 {
+    auto [lhs_ok, lhs_expr] = perform_analysis(asn->lhs);
+    auto [rhs_ok, rhs_expr] = perform_analysis(asn->rhs);
+
+    if (!lhs_ok || !rhs_ok)
+    {
+        return {false, AST::Literal{0, 0}};
+    }
+
+    if (get_type(lhs_expr) != get_type(rhs_expr))
+    {
+        std::ostringstream ss;
+        ss << "Cannot match types in assignment expression on line: " << asn->line << "\n";
+        report_err(std::cout, ss.str());
+        return {false, AST::Literal{0, 0}};
+    }
+
+    if (!is_storable_location(lhs_expr))
+    {
+        report_err(std::cout, "Assignment must be to a writable location.\n");
+        return {false, AST::Literal{0, 0}};
+    }
+
+    asn->lhs = std::move(lhs_expr);
+    asn->rhs = std::move(rhs_expr);
+    asn->result_type = get_type(asn->lhs);
+    return {true, std::move(asn)};
 }
 
 std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(const std::unique_ptr<AST::Call>& call)

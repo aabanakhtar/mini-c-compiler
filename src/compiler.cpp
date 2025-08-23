@@ -24,8 +24,17 @@ llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::PrintStatement>& s)
 
 llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::VariableDecl>& a)
 {
-    llvm::Instruction* alloca = builder->CreateAlloca(type_to_llvm_ty[a->type], nullptr, a->name);
+    const auto alloca = builder->CreateAlloca(type_to_llvm_ty[a->type], nullptr, a->name);
+    llvm::Value* evaluated = generate(a->value);
+    variable_locations[a->name] = alloca;
+    builder->CreateStore(evaluated, alloca);
     return alloca;
+}
+
+llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::ExpressionStatement>& e)
+{
+    generate(e->expr);
+    return nullptr; // will this bite me
 }
 
 llvm::Value *Codegen::gen(const AST::Literal &lit)
@@ -67,24 +76,14 @@ llvm::Value *Codegen::gen(const AST::Literal &lit)
 
 llvm::Value* Codegen::gen(const AST::Variable& var)
 {
-    return nullptr;
+    return variable_locations[var.name.value];
 }
 
 llvm::Value* Codegen::gen(const std::unique_ptr<AST::Binary>& bin)
 {
-    switch (AST::get_type(bin->left)) //  assumes semantic analyzer returned a valid ast (TODO:)
-    {
-    case AST::LiteralType::INT:
-        return generate_int_ops(bin);
-    case AST::LiteralType::FLOAT:
-        return generate_precise_ops(bin);
-    case AST::LiteralType::DOUBLE:
-        return generate_precise_ops(bin);
-    case AST::LiteralType::CHAR:
-        return generate_int_ops(bin);
-    default:
-        return nullptr;
-    }
+    if (bin->result_type != "int") return nullptr; // TODO: fix this to support more types
+
+    return generate_int_ops(bin);
 }
 
 llvm::Value* Codegen::generate_unary_int_ops(const std::unique_ptr<AST::Unary>& un)
@@ -127,19 +126,16 @@ llvm::Value* Codegen::generate_unary_double_ops(const std::unique_ptr<AST::Unary
 
 llvm::Value* Codegen::gen(const std::unique_ptr<AST::Unary>& un)
 {
-    switch (get_type(un->operand))
-    {
-    case AST::LiteralType::INT:
-        return generate_unary_int_ops(un);
-    case AST::LiteralType::DOUBLE:
-        return generate_unary_double_ops(un);
-    default: return nullptr;
-    }
+    if (un->result_type != "int") return nullptr; // TODO: add more types
+
+    return generate_unary_int_ops(un);
 }
 
 llvm::Value* Codegen::gen(const std::unique_ptr<AST::Assignment>& asn)
 {
-    return nullptr;
+    const auto rhs = generate(asn->rhs);
+    const auto lhs = generate(asn->lhs);
+    return builder->CreateStore(rhs, rhs);
 }
 
 llvm::Value* Codegen::gen(const std::unique_ptr<AST::Call>& call)

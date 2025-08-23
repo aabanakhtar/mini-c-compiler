@@ -142,6 +142,10 @@ AST::StatementVariant Parser::parse_statement()
     {
         return parse_variable_declaration();
     }
+    else if (peek().type == TokenType::IDENTIFIER && peek().value != "printf")
+    {
+        return parse_expression_statement();
+    }
 
     return parse_printf();
 }
@@ -173,6 +177,13 @@ AST::StatementVariant Parser::parse_variable_declaration()
     return std::make_unique<AST::VariableDecl>(identifier.line, name, type, value);
 }
 
+AST::StatementVariant Parser::parse_expression_statement()
+{
+    auto expr = parse_assignment(); // highest precedence
+    expect(TokenType::SEMICOLON, "Expected ; after expression!");
+    return std::make_unique<AST::ExpressionStatement>(get_line(expr), expr);
+}
+
 void TreePrinter::operator()(const AST::Literal& lit)
 {
     indent();
@@ -190,17 +201,18 @@ AST::ExprVariant Parser::get_program()
 
 AST::ExprVariant Parser::parse_assignment()
 {
-    auto lhs = parse_logic_or(); 
+    auto lhs = parse_logic_or();
 
-    while (check(TokenType::EQUAL)) 
+    if (check(TokenType::EQUAL))
     {
-        auto op = advance(); // take in the equals 
-        auto rhs = parse_logic_or();
-        lhs = std::make_unique<AST::Assignment>(get_line(lhs), std::move(lhs), op.type, std::move(rhs)); 
+        auto op = advance();
+        auto rhs = parse_assignment();  // recursive call for right-associativity
+        return std::make_unique<AST::Assignment>(get_line(lhs), std::move(lhs), op.type, std::move(rhs));
     }
 
-    return lhs; 
+    return lhs;
 }
+
 
 AST::ExprVariant Parser::parse_logic_or() 
 {
@@ -329,6 +341,12 @@ AST::ExprVariant Parser::parse_primary()
 
         return literal;
     }
+    else if (check(TokenType::IDENTIFIER))
+    {
+        const auto val = advance();
+        AST::Variable v{val.line, val};
+        return v;
+    }
     else
     {
         const auto offender = advance();  // get the offending token
@@ -340,7 +358,7 @@ AST::ExprVariant Parser::parse_primary()
 void Parser::panic(const std::string& why, const std::size_t line) const
 {
     std::ostringstream ss; 
-    ss << "FAILED PARSE! " << why << " on line: " << line << ".\n";
+    ss << "Parsing failed! " << why << " on line: " << line << ".\n";
     report_err(std::cout, ss.str());
 }
 

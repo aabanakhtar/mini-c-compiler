@@ -75,6 +75,7 @@ public:
 
     llvm::Instruction* sgen(const std::unique_ptr<AST::PrintStatement>& s);
     llvm::Instruction* sgen(const std::unique_ptr<AST::VariableDecl>& a);
+    llvm::Instruction* sgen(const std::unique_ptr<AST::ExpressionStatement>& e);
 
     llvm::Value* gen(const AST::Literal& lit);
     llvm::Value* gen(const AST::Variable& var);
@@ -98,10 +99,11 @@ private:
     std::unique_ptr<llvm::IRBuilder<>> builder; 
     // the "translation unit"
     std::unique_ptr<llvm::Module> mod; 
-    // keep track of stuff
-    std::unordered_map<std::string, llvm::Value*> names;
     // llvm types for creating variables
     std::unordered_map<std::string, llvm::Type*> type_to_llvm_ty;
+    // store variables that exist
+    // TODO: support the whole stack frames thing
+    std::unordered_map<std::string, llvm::AllocaInst*> variable_locations;
 };
 
 

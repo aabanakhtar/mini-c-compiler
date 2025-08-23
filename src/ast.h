@@ -36,7 +36,7 @@ namespace AST
 
         virtual ~Expression() = default;
 
-        LiteralType result_type = LiteralType::UNKNOWN; // initialized in semantic analysis
+        std::string result_type = "__13190381minic_unknown"; // initialized in semantic analysis
     };
 
     struct Variable : Expression
@@ -169,40 +169,40 @@ namespace AST
         virtual void operator()(_up<ArrayAccess>&) = 0;
     };
 
-    inline LiteralType get_literal_type(const AST::Literal& lit)
+    inline std::string get_literal_type(const AST::Literal& lit)
     {
-        auto get_type_enum = [&]<typename T0>(T0&& x) -> LiteralType
+        auto get_type_enum = [&]<typename T0>(T0&& x)
         {
             using U = std::decay_t<T0>;
             if constexpr (std::is_same_v<U, char>)
             {
-                return LiteralType::CHAR;
+                return "char";
             }
             else if constexpr (std::is_same_v<U, int>)
             {
-                return LiteralType::INT;
+                return "int";
             }
             else if constexpr (std::is_same_v<U, float>)
             {
-                return LiteralType::FLOAT;
+                return "float";
             }
             else if constexpr (std::is_same_v<U, double>)
             {
-                return LiteralType::DOUBLE;
+                return "double";
             }
             else if constexpr (std::is_same_v<U, std::string>)
             {
-                return LiteralType::CSTRING;
+                return "const char*";
             }
 
-            return LiteralType::UNKNOWN;
+            return "__19192838mini_c_unknown"; // im slick with it
         };
 
         return std::visit(get_type_enum, lit.value);
     }
 
     // using stdlib is such a pain 😭
-    inline LiteralType get_type(const ExprVariant& e)
+    inline std::string get_type(const ExprVariant& e)
     {
         return std::visit([&]<typename T0>(T0& x)
         {
@@ -231,11 +231,12 @@ namespace AST
 
     struct PrintStatement;
     struct VariableDecl;
-    struct VariableAssign;
+    struct ExpressionStatement;
 
     using StatementVariant = std::variant<
         _up<PrintStatement>,
-        _up<VariableDecl>
+        _up<VariableDecl>,
+        _up<ExpressionStatement>
     >;
 
     struct PrintStatement : Statement
@@ -264,13 +265,13 @@ namespace AST
 
     };
 
-    struct VariableAssign : Statement
+    struct ExpressionStatement : Statement
     {
-        std::string which;
-        std::unique_ptr<Expression> value;
+        ExprVariant expr;
 
-        explicit VariableAssign(const size_t line, std::string which, std::unique_ptr<Expression> value)
-            : Statement(line), which(std::move(which)), value(std::move(value))
+        ExpressionStatement(const std::size_t line, ExprVariant& value)
+            : Statement(line),
+              expr(std::move(value))
         {
         }
     };
@@ -283,7 +284,7 @@ namespace AST
         case LiteralType::INT: return "int";
         case LiteralType::FLOAT: return "float";
         case LiteralType::DOUBLE: return "double";
-        case LiteralType::CSTRING: return "cstring";
+        case LiteralType::CSTRING: return "const char*";
         case LiteralType::UNKNOWN: return "unknown";
         }
 
