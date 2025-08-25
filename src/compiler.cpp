@@ -135,7 +135,8 @@ llvm::Value* Codegen::gen(const std::unique_ptr<AST::Assignment>& asn)
 {
     const auto rhs = generate(asn->rhs);
     const auto lhs = generate(asn->lhs);
-    return builder->CreateStore(rhs, rhs);
+    builder->CreateStore(rhs, lhs);
+    return rhs; 
 }
 
 llvm::Value* Codegen::gen(const std::unique_ptr<AST::Call>& call)
