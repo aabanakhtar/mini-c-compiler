@@ -76,7 +76,13 @@ llvm::Value *Codegen::gen(const AST::Literal &lit)
 
 llvm::Value* Codegen::gen(const AST::Variable& var)
 {
-    return variable_locations[var.name.value];
+    const auto allocation = variable_locations[var.name.value];
+    llvm::Value* loadedVal = builder->CreateLoad(
+        allocation->getAllocatedType(),  // type of value stored
+        allocation,                       // pointer to load from
+        "loadedVal"                        // optional name
+    );
+    return loadedVal;
 }
 
 llvm::Value* Codegen::gen(const std::unique_ptr<AST::Binary>& bin)
