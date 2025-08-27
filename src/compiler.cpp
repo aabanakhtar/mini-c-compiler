@@ -37,6 +37,11 @@ llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::ExpressionStatement>
     return nullptr; // will this bite me
 }
 
+llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::IfElseStatement>& e)
+{
+    return nullptr;
+}
+
 llvm::Value *Codegen::gen(const AST::Literal &lit)
 {
     auto generate_ir = [&]<typename T0>(T0&& literal) -> llvm::Value*

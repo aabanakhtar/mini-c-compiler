@@ -146,6 +146,10 @@ AST::StatementVariant Parser::parse_statement()
     {
         return parse_expression_statement();
     }
+    else if (peek().type == TokenType::IF)
+    {
+        return parse_if_else_statement();
+    }
 
     return parse_printf();
 }
@@ -182,6 +186,20 @@ AST::StatementVariant Parser::parse_expression_statement()
     auto expr = parse_assignment(); // highest precedence
     expect(TokenType::SEMICOLON, "Expected ; after expression!");
     return std::make_unique<AST::ExpressionStatement>(get_line(expr), expr);
+}
+
+AST::StatementVariant Parser::parse_if_else_statement()
+{
+    auto line = expect(TokenType::IF, "Expected if for if statement!").line;
+    expect(TokenType::LEFT_PAREN, "Expected ( to start conditional in if statement!");
+    // get the internal condition
+    auto condition = parse_assignment();
+    expect(TokenType::RIGHT_PAREN, "Expected )");
+    auto if_body = parse_statement();
+    expect(TokenType::ELSE, "Expected else after if body."); // TODO: make this optional
+    auto else_body = parse_statement();
+
+    return std::make_unique<AST::IfElseStatement>(line, condition, if_body, else_body);
 }
 
 void TreePrinter::operator()(const AST::Literal& lit)

@@ -115,6 +115,30 @@ std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_pt
     return {true, std::move(statement)};
 }
 
+std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_ptr<AST::IfElseStatement>& statement)
+{
+    auto [ok, rich_condition] = perform_analysis(statement->condition);
+    if (!ok || AST::get_type(rich_condition) != "int")
+    {
+        report_err(std::cout, "Expected a integer as the condition for if condition!");
+        return {false, AST::StatementVariant{}};
+    }
+
+    auto [if_body_ok, rich_if_body] = perform_analysis(statement->if_body);
+    if (!if_body_ok)
+    {
+        return {false, AST::StatementVariant{}};
+    }
+
+    auto [else_body_ok, rich_else_body] = perform_analysis(statement->else_body);
+    if (!else_body_ok)
+    {
+        return {false, AST::StatementVariant{}};
+    }
+
+    return {true, std::move(statement)};
+}
+
 std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(AST::Literal& lit) const
 {
     // just add type info, not much else needed

@@ -232,11 +232,13 @@ namespace AST
     struct PrintStatement;
     struct VariableDecl;
     struct ExpressionStatement;
+    struct IfElseStatement;
 
     using StatementVariant = std::variant<
         _up<PrintStatement>,
         _up<VariableDecl>,
-        _up<ExpressionStatement>
+        _up<ExpressionStatement>,
+        _up<IfElseStatement>
     >;
 
     struct PrintStatement : Statement
@@ -272,6 +274,18 @@ namespace AST
         ExpressionStatement(const std::size_t line, ExprVariant& value)
             : Statement(line),
               expr(std::move(value))
+        {
+        }
+    };
+
+    struct IfElseStatement : Statement
+    {
+        ExprVariant condition;
+        StatementVariant if_body;
+        StatementVariant else_body;
+
+        IfElseStatement(const std::size_t line, ExprVariant& condition, StatementVariant& if_body, StatementVariant& else_body) :
+            Statement(line), condition(std::move(condition)), if_body(std::move(if_body)), else_body(std::move(else_body))
         {
         }
     };

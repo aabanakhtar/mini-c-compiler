@@ -76,6 +76,7 @@ public:
     llvm::Instruction* sgen(const std::unique_ptr<AST::PrintStatement>& s);
     llvm::Instruction* sgen(const std::unique_ptr<AST::VariableDecl>& a);
     llvm::Instruction* sgen(const std::unique_ptr<AST::ExpressionStatement>& e);
+    llvm::Instruction* sgen(const std::unique_ptr<AST::IfElseStatement>& e);
 
     llvm::Value* gen(const AST::Literal& lit);
     llvm::Value* gen(const AST::Variable& var);
