@@ -39,6 +39,38 @@ llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::ExpressionStatement>
 
 llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::IfElseStatement>& e)
 {
+    // any value that is non-zero is true in C
+    auto zero = llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), 0); 
+    auto condition_value = generate(e->condition); 
+
+    auto condition = builder->CreateICmpNE(condition_value, zero, "ifcond");
+
+    llvm::Function* current_function = builder->GetInsertBlock()->getParent();
+    // define the bodies for each branch
+    auto if_block = llvm::BasicBlock::Create(*context, "if", current_function);
+    auto else_block = llvm::BasicBlock::Create(*context, "else", current_function); 
+    auto merge_block = llvm::BasicBlock::Create(*context, "merge", current_function);
+
+    // branch to the correct block based on the condition
+    builder->CreateCondBr(condition, if_block, else_block); 
+
+    // move to the if body
+    builder->SetInsertPoint(if_block);
+    generate(e->if_body);
+    // jump back to the merge point to continue normal execution
+    builder->CreateBr(merge_block);
+    if_block = builder->GetInsertBlock(); // update the current block (llvm internal thing?)
+
+    // create else body
+    builder->SetInsertPoint(else_block);
+    generate(e->else_body); 
+    // return control flow (to merge point)
+    builder->CreateBr(merge_block);
+    else_block = builder->GetInsertBlock(); // update current block (llvm internal thing?)
+
+    // create the merge point
+    builder->SetInsertPoint(merge_block);
+
     return nullptr;
 }
 

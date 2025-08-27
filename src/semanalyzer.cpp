@@ -136,6 +136,10 @@ std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_pt
         return {false, AST::StatementVariant{}};
     }
 
+    statement->condition = std::move(rich_condition); 
+    statement->if_body = std::move(rich_if_body);
+    statement->else_body = std::move(rich_else_body);
+
     return {true, std::move(statement)};
 }
 

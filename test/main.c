@@ -1,2 +1,2 @@
-if ("boom") printf("hi");
+if (1) printf("hi");
 else printf("bye");
