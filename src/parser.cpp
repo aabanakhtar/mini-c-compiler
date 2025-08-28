@@ -150,6 +150,10 @@ AST::StatementVariant Parser::parse_statement()
     {
         return parse_if_else_statement();
     }
+    else if (peek().type == TokenType::WHILE)
+    {
+        return parse_while_statement();
+    }
 
     return parse_printf();
 }
@@ -200,6 +204,18 @@ AST::StatementVariant Parser::parse_if_else_statement()
     auto else_body = parse_statement();
 
     return std::make_unique<AST::IfElseStatement>(line, condition, if_body, else_body);
+}
+
+AST::StatementVariant Parser::parse_while_statement()
+{
+    auto line = expect(TokenType::WHILE, "Expected while for while statement!").line;
+    expect(TokenType::LEFT_PAREN, "Expected ( to start conditional in while statement!");
+    // get the internal condition
+    auto condition = parse_assignment();
+    expect(TokenType::RIGHT_PAREN, "Expected )");
+    auto body = parse_statement();
+
+    return std::make_unique<AST::WhileStatement>(line, condition, body);
 }
 
 void TreePrinter::operator()(const AST::Literal& lit)

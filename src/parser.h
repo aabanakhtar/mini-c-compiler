@@ -35,6 +35,7 @@ public:
     AST::StatementVariant parse_variable_declaration();
     AST::StatementVariant parse_expression_statement();
     AST::StatementVariant parse_if_else_statement();
+    AST::StatementVariant parse_while_statement(); 
     //AST::ExprVariant get_program();
     AST::ExprVariant parse_assignment();
     AST::ExprVariant parse_logic_or();   

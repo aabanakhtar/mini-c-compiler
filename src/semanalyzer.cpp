@@ -143,6 +143,27 @@ std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_pt
     return {true, std::move(statement)};
 }
 
+std::pair<bool, AST::StatementVariant> SemanticAnalyzer::analyze(AST::WhileStatement& s)
+{
+    auto [ok, rich_condition] = perform_analysis(s.condition);
+    if (!ok || AST::get_type(rich_condition) != "int")
+    {
+        report_err(std::cout, "Expected a integer as the condition for while condition!");
+        return {false, AST::StatementVariant{}};
+    }
+
+    auto [body_ok, rich_body] = perform_analysis(s.body);
+    if (!body_ok)
+    {
+        return {false, AST::StatementVariant{}};
+    }
+
+    s.condition = std::move(rich_condition); 
+    s.body = std::move(rich_body);
+
+    return {true, std::move(s)};
+}
+
 std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(AST::Literal& lit) const
 {
     // just add type info, not much else needed

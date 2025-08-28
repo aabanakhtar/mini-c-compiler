@@ -50,7 +50,8 @@ private:
     std::pair<bool, AST::StatementVariant> sanalyze(std::unique_ptr<AST::VariableDecl>& statement);
     std::pair<bool, AST::StatementVariant> sanalyze(std::unique_ptr<AST::ExpressionStatement>& statement);
     std::pair<bool, AST::StatementVariant> sanalyze(std::unique_ptr<AST::IfElseStatement>& statement);
-
+    std::pair<bool, AST::StatementVariant> sanalyze(std::unique_ptr<AST::WhileStatement>& statement);
+    
     std::pair<bool, AST::ExprVariant> analyze(AST::Literal& lit) const;
     std::pair<bool, AST::ExprVariant> analyze(AST::Variable& var);
     std::pair<bool, AST::ExprVariant> analyze(std::unique_ptr<AST::Binary>& bin);

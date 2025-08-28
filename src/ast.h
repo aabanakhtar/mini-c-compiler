@@ -238,7 +238,8 @@ namespace AST
         _up<PrintStatement>,
         _up<VariableDecl>,
         _up<ExpressionStatement>,
-        _up<IfElseStatement>
+        _up<IfElseStatement>,
+        _up<WhileStatement>,
     >;
 
     struct PrintStatement : Statement
@@ -286,6 +287,17 @@ namespace AST
 
         IfElseStatement(const std::size_t line, ExprVariant& condition, StatementVariant& if_body, StatementVariant& else_body) :
             Statement(line), condition(std::move(condition)), if_body(std::move(if_body)), else_body(std::move(else_body))
+        {
+        }
+    };
+
+    struct WhileStatement : Statement 
+    {
+        ExprVariant condition;
+        StatementVariant body;
+
+        WhileStatement(const std::size_t line, ExprVariant& condition, StatementVariant& body) :
+            Statement(line), condition(std::move(condition)), body(std::move(body))
         {
         }
     };
