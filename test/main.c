@@ -1,2 +1,1 @@
-if (1) printf("hi");
-else printf("bye");
+while (1) printf("Hello, World!\n");

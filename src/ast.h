@@ -233,13 +233,14 @@ namespace AST
     struct VariableDecl;
     struct ExpressionStatement;
     struct IfElseStatement;
+    struct WhileStatement;
 
     using StatementVariant = std::variant<
         _up<PrintStatement>,
         _up<VariableDecl>,
         _up<ExpressionStatement>,
         _up<IfElseStatement>,
-        _up<WhileStatement>,
+        _up<WhileStatement>
     >;
 
     struct PrintStatement : Statement

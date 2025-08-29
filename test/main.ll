@@ -1,23 +1,20 @@
 ; ModuleID = 'main'
 source_filename = "main"
 
-@0 = private unnamed_addr constant [3 x i8] c"hi\00", align 1
-@1 = private unnamed_addr constant [4 x i8] c"bye\00", align 1
+@0 = private unnamed_addr constant [16 x i8] c"Hello, World!\\n\00", align 1
 
 define i32 @main() {
 entry:
-  br i1 false, label %if, label %else
+  br label %while_cond
 
-if:                                               ; preds = %entry
+while_cond:                                       ; preds = %while_body, %entry
+  br i1 true, label %while_body, label %while_end
+
+while_body:                                       ; preds = %while_cond
   %0 = call i32 (ptr, ...) @printf(ptr @0)
-  br label %merge
+  br label %while_cond
 
-else:                                             ; preds = %entry
-  %1 = call i32 (ptr, ...) @printf(ptr @1)
-  br label %merge
-
-merge:                                            ; preds = %else, %if
-  %qwerty = call i32 (ptr, ...) @printf(ptr @1)
+while_end:                                        ; preds = %while_cond
   ret i32 0
 }
 

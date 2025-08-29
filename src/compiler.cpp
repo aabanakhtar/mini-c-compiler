@@ -40,16 +40,16 @@ llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::ExpressionStatement>
 llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::IfElseStatement>& e)
 {
     // any value that is non-zero is true in C
-    auto zero = llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), 0); 
+    static auto zero = llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), 0); 
     auto condition_value = generate(e->condition); 
 
     auto condition = builder->CreateICmpNE(condition_value, zero, "ifcond");
 
     llvm::Function* current_function = builder->GetInsertBlock()->getParent();
     // define the bodies for each branch
-    auto if_block = llvm::BasicBlock::Create(*context, "if", current_function);
-    auto else_block = llvm::BasicBlock::Create(*context, "else", current_function); 
-    auto merge_block = llvm::BasicBlock::Create(*context, "merge", current_function);
+    auto if_block = llvm::BasicBlock::Create(*context, "if_body", current_function);
+    auto else_block = llvm::BasicBlock::Create(*context, "else_body", current_function); 
+    auto merge_block = llvm::BasicBlock::Create(*context, "if_end", current_function);
 
     // branch to the correct block based on the condition
     builder->CreateCondBr(condition, if_block, else_block); 
@@ -72,6 +72,36 @@ llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::IfElseStatement>& e)
     builder->SetInsertPoint(merge_block);
 
     return nullptr;
+}
+
+llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::WhileStatement>& w)
+{
+    // any value that is non-zero is true in C
+    static auto zero = llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), 0); 
+    
+    // define our basic blocks
+    llvm::Function* current_function = builder->GetInsertBlock()->getParent();
+    auto while_cond = llvm::BasicBlock::Create(*context, "while_cond", current_function);
+    auto body_block = llvm::BasicBlock::Create(*context, "while_body", current_function);
+    auto merge_point = llvm::BasicBlock::Create(*context, "while_end", current_function);
+    
+    builder->CreateBr(while_cond); // jump to condition check first
+    
+    builder->SetInsertPoint(while_cond);
+    auto condition = generate(w->condition); 
+    auto condition_as_bool = builder->CreateICmpNE(condition, zero, "whilecond");
+    builder->CreateCondBr(condition_as_bool, body_block, merge_point);    
+    while_cond = builder->GetInsertBlock(); // update current block (llvm internal thing?)
+
+    // generate the body
+    builder->SetInsertPoint(body_block);
+    generate(w->body);
+    builder->CreateBr(while_cond);
+    // update and exit loop 
+    body_block = builder->GetInsertBlock(); // update current block (llvm internal thing?)
+    
+    builder->SetInsertPoint(merge_point); // continue normal execution
+    return nullptr; 
 }
 
 llvm::Value *Codegen::gen(const AST::Literal &lit)
