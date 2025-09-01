@@ -101,7 +101,7 @@ std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_pt
         return {false, AST::StatementVariant{}};
     }
 
-    declared_variables.insert(Variable{statement->name, current_scope_depth});
+    declared_variables.emplace_back(statement->name, current_scope_depth);
     declared_variable_types[statement->name] = statement->type;
     // add the $$$
     statement->value = std::move(s);
@@ -182,6 +182,15 @@ std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_pt
     }
 
     --current_scope_depth;
+    // STL so goated; filter out the bad variables
+    const auto new_end = std::remove_if(declared_variables.begin(), declared_variables.end(), [&](auto& x) -> bool
+    {
+        if (x.scope_depth > current_scope_depth) return true;
+
+        return false;
+    });
+    // remove
+    declared_variables.erase(new_end, declared_variables.end());
     return {true, std::move(statement)};
 }
 

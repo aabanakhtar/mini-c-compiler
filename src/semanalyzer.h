@@ -69,7 +69,7 @@ private:
         std::size_t scope_depth = static_cast<std::size_t>(-1);
     };
 
-    std::unordered_set<Variable> declared_variables;
+    std::vector<Variable> declared_variables;
     std::unordered_map<std::string, std::string> declared_variable_types;
     std::size_t current_scope_depth = 0;
 
