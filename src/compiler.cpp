@@ -40,7 +40,7 @@ llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::ExpressionStatement>
 llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::IfElseStatement>& e)
 {
     // any value that is non-zero is true in C
-    static auto zero = llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), 0); 
+    static auto zero = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0);
     auto condition_value = generate(e->condition); 
 
     auto condition = builder->CreateICmpNE(condition_value, zero, "ifcond");
@@ -77,7 +77,7 @@ llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::IfElseStatement>& e)
 llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::WhileStatement>& w)
 {
     // any value that is non-zero is true in C
-    static auto zero = llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), 0); 
+    static auto zero = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0);
     
     // define our basic blocks
     llvm::Function* current_function = builder->GetInsertBlock()->getParent();
@@ -237,25 +237,49 @@ llvm::Value* Codegen::generate_int_ops(const std::unique_ptr<AST::Binary>& bin)
         return nullptr;
     }
 
+    llvm::Value* result = nullptr; // store i1 before casting
+
     switch (bin->op)
     {
     case TokenType::PLUS:
-        return builder->CreateAdd(left, right);
+        result = builder->CreateAdd(left, right);
+        break;
     case TokenType::MINUS:
-        return builder->CreateSub(left, right);
+        result = builder->CreateSub(left, right);
+        break;
     case TokenType::STAR:
-        return builder->CreateMul(left, right);
+        result = builder->CreateMul(left, right);
+        break;
     case TokenType::SLASH:
-        return builder->CreateSDiv(left, right);
+        result = builder->CreateSDiv(left, right);
+        break;
     case TokenType::EQUAL_EQUAL:
-        return builder->CreateICmpEQ(left, right); // integer cmp eq
+        result = builder->CreateICmpEQ(left, right);
+        break;
     case TokenType::BANG_EQUAL:
-        return builder->CreateICmpNE(left, right); // integer cmp !eq what are these names vro
+        result = builder->CreateICmpNE(left, right);
+        break;
+    case TokenType::LESS:
+        result = builder->CreateICmpSLT(left, right);
+        break;
+    case TokenType::GREATER:
+        result = builder->CreateICmpSGT(left, right);
+        break;
+    case TokenType::LESS_EQUAL:
+        result = builder->CreateICmpSLE(left, right);
+        break;
+    case TokenType::GREATER_EQUAL:
+        result = builder->CreateICmpSGE(left, right);
+        break;
+
     case TokenType::AND:
     case TokenType::OR:
     default:
-        return nullptr; // shouldn't reach here unless something is weird
+        return nullptr;
     }
+
+    // Force cast to sign i32 before returning
+    return builder->CreateSExtOrBitCast(result, llvm::Type::getInt32Ty(*context));
 }
 
 llvm::Value* Codegen::generate_precise_ops(const std::unique_ptr<AST::Binary>& bin)

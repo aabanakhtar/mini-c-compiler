@@ -90,13 +90,18 @@ std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_pt
     }
 
     // no duplicate variables TODO: refactor for shadowing in scopes and stuff
-    if (declared_variables.contains(statement->name))
+    const auto duplicate_exists = std::find_if(declared_variables.begin(), declared_variables.end(), [&](auto& x) -> bool
+    {
+        return x.name == statement->name;
+    });
+
+    if (duplicate_exists != declared_variables.end())
     {
         report_err(std::cout, "Expected a non-duplicate identifier for a variable.");
         return {false, AST::StatementVariant{}};
     }
 
-    declared_variables.insert(statement->name);
+    declared_variables.insert(Variable{statement->name, current_scope_depth});
     declared_variable_types[statement->name] = statement->type;
     // add the $$$
     statement->value = std::move(s);
@@ -164,6 +169,22 @@ std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_pt
     return {true, std::move(s)};
 }
 
+std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_ptr<AST::BlockStatement>& statement)
+{
+    ++current_scope_depth;
+
+    for (auto &st : statement->statements)
+    {
+        auto [ok, s] = perform_analysis(st);
+        if (!ok) return {false, AST::StatementVariant{}};
+
+        st = std::move(s);
+    }
+
+    --current_scope_depth;
+    return {true, std::move(statement)};
+}
+
 std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(AST::Literal& lit) const
 {
     // just add type info, not much else needed
@@ -173,7 +194,13 @@ std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(AST::Literal& lit) c
 
 std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(AST::Variable& var)
 {
-    if (!declared_variables.contains(var.name.value))
+    const auto found_variable = std::find_if(declared_variables.begin(), declared_variables.end(), [&](auto& x) -> bool
+    {
+        return x.name == var.name.value;
+    });
+
+    // second check just to keep scopes, might be redundant tbh
+    if (found_variable != declared_variables.end() && found_variable->scope_depth <= current_scope_depth)
     {
         std::ostringstream ss;
         ss << "undefined variable: " << var.name.value << "\n";

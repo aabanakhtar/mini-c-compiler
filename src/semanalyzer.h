@@ -51,6 +51,7 @@ private:
     std::pair<bool, AST::StatementVariant> sanalyze(std::unique_ptr<AST::ExpressionStatement>& statement);
     std::pair<bool, AST::StatementVariant> sanalyze(std::unique_ptr<AST::IfElseStatement>& statement);
     std::pair<bool, AST::StatementVariant> sanalyze(std::unique_ptr<AST::WhileStatement>& statement);
+    std::pair<bool, AST::StatementVariant> sanalyze(std::unique_ptr<AST::BlockStatement>& statement);
     
     std::pair<bool, AST::ExprVariant> analyze(AST::Literal& lit) const;
     std::pair<bool, AST::ExprVariant> analyze(AST::Variable& var);
@@ -62,14 +63,23 @@ private:
     std::pair<bool, AST::ExprVariant> analyze(const std::unique_ptr<AST::ArrayAccess>& aa);
 
 private:
-    std::unordered_set<std::string> declared_variables;
+    struct Variable
+    {
+        std::string name;
+        std::size_t scope_depth = static_cast<std::size_t>(-1);
+    };
+
+    std::unordered_set<Variable> declared_variables;
     std::unordered_map<std::string, std::string> declared_variable_types;
+    std::size_t current_scope_depth = 0;
 
     // store grammar rules
     const std::unordered_multimap<TokenType, std::pair<std::string, std::string>>
         binary_operations_rules_LUT = {
             {TokenType::PLUS, {"int", "int"}},
             {TokenType::MINUS, {"int", "int"}},
+            {TokenType::EQUAL_EQUAL, {"int", "int"}},
+            {TokenType::BANG_EQUAL, {"int", "int"}}
         };
 
     const std::unordered_multimap<TokenType, std::string>

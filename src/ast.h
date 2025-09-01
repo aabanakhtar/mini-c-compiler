@@ -234,14 +234,26 @@ namespace AST
     struct ExpressionStatement;
     struct IfElseStatement;
     struct WhileStatement;
+    struct BlockStatement;
 
     using StatementVariant = std::variant<
+        _up<BlockStatement>,
         _up<PrintStatement>,
         _up<VariableDecl>,
         _up<ExpressionStatement>,
         _up<IfElseStatement>,
         _up<WhileStatement>
     >;
+
+    struct BlockStatement : Statement
+    {
+        std::vector<StatementVariant> statements;
+
+        // statements are MOVED
+        explicit BlockStatement(const std::size_t line, std::vector<StatementVariant>& sts) : Statement(line), statements(std::move(sts))
+        {
+        }
+    };
 
     struct PrintStatement : Statement
     {
@@ -257,6 +269,7 @@ namespace AST
     {
         std::string name;
         std::string type;
+        std::size_t scope_depth = static_cast<std::size_t>(-1);
         ExprVariant value;
 
         VariableDecl(const size_t line, const std::string& name, const std::string& type, ExprVariant& value)

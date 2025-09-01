@@ -107,6 +107,22 @@ Parser::Program Parser::get_program()
     return p;
 }
 
+AST::StatementVariant Parser::parse_block_statement()
+{
+    auto statements = std::vector<AST::StatementVariant>{};
+    std::size_t line = advance().line; // advance past the {
+
+    statements.reserve(20);
+    while (peek().type != TokenType::RIGHT_BRACE && !is_panic)
+    {
+        statements.push_back(parse_statement());
+    }
+
+    if (!is_panic) expect(TokenType::RIGHT_BRACE, "Expected } to close off block statement");
+
+    return std::make_unique<AST::BlockStatement>(line, statements);
+}
+
 const Token& Parser::expect(const TokenType t, const std::string& error)
 {
     if (!check(t))
