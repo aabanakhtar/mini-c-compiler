@@ -14,6 +14,16 @@ Codegen::Codegen()
     type_to_llvm_ty["void"]  = llvm::Type::getVoidTy(*context);
 }
 
+llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::BlockStatement>& block)
+{
+    for (const auto& s : block->statements)
+    {
+        generate(s);
+    }
+
+    return nullptr; 
+}
+
 llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::PrintStatement>& s)
 {
     auto str_arg = std::get<AST::Literal>(s->value);
@@ -149,6 +159,13 @@ llvm::Value* Codegen::gen(const AST::Variable& var)
         allocation,                       // pointer to load from
         "loadedVal"                        // optional name
     );
+
+    // if we are just getting the address of the variable, return that
+    if (!value_flag)
+    {
+        return allocation; 
+    }
+
     return loadedVal;
 }
 
@@ -206,8 +223,13 @@ llvm::Value* Codegen::gen(const std::unique_ptr<AST::Unary>& un)
 
 llvm::Value* Codegen::gen(const std::unique_ptr<AST::Assignment>& asn)
 {
+
     const auto rhs = generate(asn->rhs);
+    
+    value_flag = false;
     const auto lhs = generate(asn->lhs);
+    value_flag = true;
+    
     builder->CreateStore(rhs, lhs);
     return rhs; 
 }

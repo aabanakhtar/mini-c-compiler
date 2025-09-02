@@ -170,6 +170,10 @@ AST::StatementVariant Parser::parse_statement()
     {
         return parse_while_statement();
     }
+    else if (peek().type == TokenType::LEFT_BRACE)
+    {
+        return parse_block_statement();
+    }
 
     return parse_printf();
 }

@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <sstream>
+#include <algorithm>
+#include <unordered_set>
 
 #include "error.h"
 #include "parser.h"
@@ -209,7 +211,7 @@ std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(AST::Variable& var)
     });
 
     // second check just to keep scopes, might be redundant tbh
-    if (found_variable != declared_variables.end() && found_variable->scope_depth <= current_scope_depth)
+    if (found_variable == declared_variables.end() && found_variable->scope_depth > current_scope_depth)
     {
         std::ostringstream ss;
         ss << "undefined variable: " << var.name.value << "\n";

@@ -74,6 +74,7 @@ public:
     }
 
     // statement generators
+    llvm::Instruction* sgen(const std::unique_ptr<AST::BlockStatement>& block);
     llvm::Instruction* sgen(const std::unique_ptr<AST::PrintStatement>& s);
     llvm::Instruction* sgen(const std::unique_ptr<AST::VariableDecl>& a);
     llvm::Instruction* sgen(const std::unique_ptr<AST::ExpressionStatement>& e);
@@ -95,7 +96,10 @@ public:
     llvm::Value* generate_int_ops(const std::unique_ptr<AST::Binary>& bin);
     llvm::Value* generate_precise_ops(const std::unique_ptr<AST::Binary>& bin);
 
-private: 
+private:
+    // for variables
+    bool value_flag = true; 
+
     // stores internal info that we just pass around
     std::unique_ptr<llvm::LLVMContext> context; 
     // creates ir instructions
