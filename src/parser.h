@@ -30,6 +30,9 @@ public:
 
     // statements
     Program get_program();
+
+    AST::DeclarationVariant parse_function_declaration();
+
     AST::StatementVariant parse_block_statement();
     AST::StatementVariant parse_statement();
     AST::StatementVariant parse_printf();

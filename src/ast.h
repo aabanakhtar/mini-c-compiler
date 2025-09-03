@@ -316,6 +316,47 @@ namespace AST
         }
     };
 
+
+    struct Declaration 
+    {
+        std::size_t line;
+
+        explicit Declaration(const size_t line) : line(line)
+        {
+        }
+
+        virtual ~Declaration() = default;
+    };
+    
+    struct FunctionDeclaration; 
+
+    using DeclarationVariant = std::variant<
+        _up<FunctionDeclaration>
+    >;
+
+    struct FunctionDeclaration : Declaration
+    {
+        struct FunctionArg
+        {
+            std::string type = "", name = "";
+
+            FunctionArg(const std::string& type, const std::string& name) : type(type), name(name)
+            {
+            }
+        };
+
+        std::string name;
+        std::string return_type;
+        std::vector<FunctionArg> params; // (name, type)
+        std::unique_ptr<BlockStatement> body;
+
+        FunctionDeclaration(const size_t line, const std::string& name, const std::string& return_type,
+            const std::vector<FunctionArg>& params, _up<BlockStatement> body)
+            : Declaration(line), name(name), return_type(return_type), params(params), body(std::move(body))
+        {
+        }
+    };
+
     inline std::string literal_type_to_str(const LiteralType literal)
     {
         switch (literal)

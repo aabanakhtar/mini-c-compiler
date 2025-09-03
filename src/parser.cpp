@@ -107,6 +107,39 @@ Parser::Program Parser::get_program()
     return p;
 }
 
+AST::DeclarationVariant Parser::parse_function_declaration()
+{
+    // get the main header info
+    auto return_type_token = advance(); 
+    auto line = return_type_token.line; 
+    auto return_ty = return_type_token.value;
+    auto name_token = expect(TokenType::IDENTIFIER, "Expected function name after return type in function declaration.").value;
+    expect(TokenType::LEFT_PAREN, "Expected ( after function name in function declaration.");
+    // parse arguments
+    std::vector<AST::FunctionDeclaration::FunctionArg> params;
+    if (!check(TokenType::RIGHT_PAREN))
+    {
+        // get the arg first, then loop back for the next one if possible
+        do 
+        {
+            auto type_token = advance(); 
+            auto type = type_token.value; 
+            if (type_token.type == TokenType::STRUCT)
+            {
+                type = expect(TokenType::IDENTIFIER, "Expected struct name after 'struct' keyword in function argument.").value;
+            }
+            auto name = expect(TokenType::IDENTIFIER, "Expected argument name after type in function argument.").value;
+            params.emplace_back(type, name);
+        } 
+        while (check(TokenType::COMMA) && advance().type == TokenType::COMMA);
+    }
+    // close off args
+    expect(TokenType::RIGHT_PAREN, "Expected ) after function arguments in function declaration.");
+    // get the body
+    auto body = parse_block_statement();
+    return std::make_unique<AST::FunctionDeclaration>(line, name_token, return_ty, params, std::move(body));
+}
+
 AST::StatementVariant Parser::parse_block_statement()
 {
     auto statements = std::vector<AST::StatementVariant>{};
