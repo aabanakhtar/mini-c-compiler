@@ -1,61 +1,26 @@
 # mini-c
-Mini-C is a compiler for a restricted subset of the C programming language, written in C++ using LLVM's backend.
+Mini-C is a compiler for a restricted subset of the C programming language, written in C++ using LLVM's backend. It is primarily built to learn how the LLVM backend cooperates with a frontend. 
 
+## Features
+- Simple lexer based on a large switch
+- Recursive Descent Parsing using `std::variant`
+- Semantic Analysis using recursive descent
+- Supports core C language features:
+  - `int` type
+  - `while`, `if`, and `else` statements
+  - Function declarations of type `int` and `void`
 
-# Todo
+## Requirements
+- C++20 compiler (tested with GCC and Clang)
+- LLVM (version 15 or newer recommended)
+- CMake
 
-## ✅ Basics
+## Building
+First, ensure LLVM is installed and available via `find_package`.  
+On Linux, you may need to install LLVM development packages, for example:
 
-- **Integer types**: `int`, `char`
-- **Basic constants**: numeric literals, character literals
-- **Arithmetic operators**: `+`, `-`, `*`, `/`
-- **Comparison operators**: `==`, `!=`, `<`, `>`, `<=`, `>=`
-- **Assignment**: `=`
-- **Compound statements**: `{ ... }`
-- **Return statement**
+```sh
+sudo apt install llvm-dev clang
+```
 
-## ✅ Expressions
-
-- **Parentheses grouping**
-- **Unary operators**: `-`, `+`, `!`
-- **Precedence and associativity**
-- **Function calls with arguments**
-- **Type casts**: `((int)x)` *(optional early on)*
-
-## ✅ Control Flow
-
-- `if`, `else`
-- `while`
-- `for` *(optional)*
-- `break`, `continue` *(optional)*
-- `return` with and without value
-
-## ✅ Functions
-
-- **Function declaration and definition**
-- **Function parameters**: passed by value
-- **Function return types**: `int`, `void`
-- **Function call expressions**
-
-## ✅ Variables and Scoping
-
-- **Local variable declaration**
-- **Variable initialization**
-- **Shadowing and block scope**
-- **Global variables** *(optional)*
-
-## ✅ Types and Type System
-
-- **Basic types**: `int`, `char`, `void`
-- **Implicit type conversion** (e.g., `char` to `int`)
-- **Type checking** for expressions and assignments
-
-## ✅ I/O and External Functions (via libc)
-
-- **Calling external functions** like `printf`
-- **Linking with standard library**
-
-## ✅ Minimal Preprocessing *(Optional)*
-
-- `#define` macros *(optional)*
-- `#include` statements *(optional, for standard headers)*
+more coming soon.
