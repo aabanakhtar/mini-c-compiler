@@ -26,7 +26,7 @@ public:
     {
         int a = 3;
     }
-    using Program = std::vector<AST::StatementVariant>;
+    using Program = std::vector<AST::DeclarationVariant>;
 
     // statements
     Program get_program();
@@ -34,12 +34,14 @@ public:
     AST::DeclarationVariant parse_function_declaration();
 
     AST::StatementVariant parse_block_statement();
+    AST::StatementVariant parse_return_statement(); 
     AST::StatementVariant parse_statement();
     AST::StatementVariant parse_printf();
     AST::StatementVariant parse_variable_declaration();
     AST::StatementVariant parse_expression_statement();
     AST::StatementVariant parse_if_else_statement();
     AST::StatementVariant parse_while_statement(); 
+    
     //AST::ExprVariant get_program();
     AST::ExprVariant parse_assignment();
     AST::ExprVariant parse_logic_or();   

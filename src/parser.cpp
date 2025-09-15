@@ -97,7 +97,7 @@ Parser::Program Parser::get_program()
     auto p = Program{};
     while (current_tok < tokens.size() - 1)
     {
-        p.push_back(parse_statement());
+        p.push_back(parse_function_declaration());
         if (is_panic)
         {
             // TODO: handlePanic();
@@ -136,8 +136,10 @@ AST::DeclarationVariant Parser::parse_function_declaration()
     // close off args
     expect(TokenType::RIGHT_PAREN, "Expected ) after function arguments in function declaration.");
     // get the body
-    auto body = parse_block_statement();
-    return std::make_unique<AST::FunctionDeclaration>(line, name_token, return_ty, params, std::move(body));
+    auto body_variant = parse_block_statement();
+    // Extract BlockStatement from variant
+    auto body_ptr = std::move(std::get<std::unique_ptr<AST::BlockStatement>>(body_variant));
+    return std::make_unique<AST::FunctionDeclaration>(line, name_token, return_ty, params, std::move(body_ptr));
 }
 
 AST::StatementVariant Parser::parse_block_statement()
@@ -154,6 +156,21 @@ AST::StatementVariant Parser::parse_block_statement()
     if (!is_panic) expect(TokenType::RIGHT_BRACE, "Expected } to close off block statement");
 
     return std::make_unique<AST::BlockStatement>(line, statements);
+}
+
+AST::StatementVariant Parser::parse_return_statement()
+{
+    auto line = expect(TokenType::RETURN, "Expected return keyword for return statement!").line;
+    // handle void returns
+    if (peek().type == TokenType::SEMICOLON)
+    {
+        advance(); // get rid of the semicolon
+        return std::make_unique<AST::ReturnStatement>(line, std::nullopt);
+    }
+
+    auto expr = parse_assignment();
+    expect(TokenType::SEMICOLON, "Expected ; after return expression!");
+    return std::make_unique<AST::ReturnStatement>(line, std::make_optional(std::move(expr)));
 }
 
 const Token& Parser::expect(const TokenType t, const std::string& error)
@@ -206,6 +223,10 @@ AST::StatementVariant Parser::parse_statement()
     else if (peek().type == TokenType::LEFT_BRACE)
     {
         return parse_block_statement();
+    }
+    else if (peek().type == TokenType::RETURN)
+    {
+        return parse_return_statement();
     }
 
     return parse_printf();

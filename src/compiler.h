@@ -13,26 +13,13 @@ class Codegen
 public:
     explicit Codegen();
 
-    void test_expr_gen(const std::vector<AST::StatementVariant>& sts)
+    void test_expr_gen(const std::vector<AST::DeclarationVariant>& sts)
     {
-        llvm::FunctionType *func_type = llvm::FunctionType::get(
-            llvm::Type::getInt32Ty(*context), false);
-        llvm::Function *func = llvm::Function::Create(
-            func_type, llvm::Function::ExternalLinkage, "main", *mod);
-        llvm::BasicBlock *bb = llvm::BasicBlock::Create(*context, "entry", func);
-        builder->SetInsertPoint(bb);
-
-        for (const auto& s : sts)
+        for (auto & d : sts)
         {
-            // generate the IR for each statement
-            generate(s);
+            generate(d);
         }
 
-        llvm::Type* i32_ty = llvm::Type::getInt32Ty(*context);
-        llvm::Value* int0 = llvm::ConstantInt::get(i32_ty, 0, true);
-        builder->CreateRet(int0);
-        // make sure stuff is right
-        llvm::verifyFunction(*func);
         mod->print(llvm::outs(), nullptr);
         // check if its generating good IR
         if (llvm::verifyModule(*mod, &llvm::errs()))
@@ -40,6 +27,14 @@ public:
             llvm::errs() << "Module verification failed!\n";
         }
     }   
+
+    void generate(const AST::DeclarationVariant& d)
+    {
+        std::visit([&](auto& x)
+        {
+            dgen(x);
+        }, d);
+    }
 
     llvm::Instruction* generate(const AST::StatementVariant& s)
     {
@@ -73,7 +68,11 @@ public:
         return printfCallee;
     }
 
+    //declaration generators 
+    llvm::Function* dgen(const std::unique_ptr<AST::FunctionDeclaration>& fd);
+
     // statement generators
+    llvm::Instruction* sgen(const std::unique_ptr<AST::ReturnStatement>& r);
     llvm::Instruction* sgen(const std::unique_ptr<AST::BlockStatement>& block);
     llvm::Instruction* sgen(const std::unique_ptr<AST::PrintStatement>& s);
     llvm::Instruction* sgen(const std::unique_ptr<AST::VariableDecl>& a);

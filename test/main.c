@@ -1,17 +1,11 @@
 
-int i = 0;
-while (i != 5)
+int add(int a, int b)
 {
-	int q = 3;
-	q = 5; 
-	{
-		q = 7; 
-		int z = 10;
-	
-		z = 5;
-	}
-	q= 3; 
-	printf("Hello, World!\n");
-	printf("Hello, World!\n");
-	i = i + 1; 
+	b = 6; 
+	return 3;
+}
+
+
+int main() {
+	return 0;
 }

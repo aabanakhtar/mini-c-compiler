@@ -79,9 +79,9 @@ std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_pt
     }
 
     // TODO: check if there is a valid type with structs and stuff
-    if (!std::unordered_set<std::string>{"int", "char"}.contains(statement->type))
+    if (!types.contains(statement->type) && statement->type != "void")
     {
-        report_err(std::cout, "Compiler todo: support more types. for now, int and char are supported");
+        report_err(std::cout, "Compiler todo: support more types. for int are supported");
         return {false, AST::StatementVariant{}};
     }
 
@@ -193,6 +193,7 @@ std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_pt
     });
     // remove
     declared_variables.erase(new_end, declared_variables.end());
+    
     return {true, std::move(statement)};
 }
 
@@ -311,4 +312,103 @@ std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(const std::unique_pt
 
 std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(const std::unique_ptr<AST::ArrayAccess>& aa)
 {
+}
+
+std::pair<bool, AST::DeclarationVariant> SemanticAnalyzer::danalyze(std::unique_ptr<AST::FunctionDeclaration> &declaration)
+{
+    current_function = declaration.get(); // for substatements to access
+
+    auto duplicate_exists = declared_functions.find(declaration->name); // make sure no dup functions exist
+    if (duplicate_exists != declared_functions.end())
+    {
+        report_err(std::cout, "Function with the same name already exists!");
+        return {false, AST::DeclarationVariant{}};
+    }
+
+    declared_functions.insert(declaration->name);
+
+    std::unordered_set<std::string> param_names; 
+    for (auto& [ty, name] : declaration->params) 
+    {
+        if (param_names.contains(name)) 
+        {
+            report_err(std::cout, "Duplicate parameter names are not allowed!");
+            return {false, AST::DeclarationVariant{}};
+        }
+        
+        param_names.insert(name);
+        // simulate variable scoping behavior for usage in the function body (gets removed by block filtering later)
+        declared_variables.push_back({name, current_scope_depth + 1});
+        declared_variable_types[name] = ty;
+
+        if (!types.contains(ty)) 
+        {
+            report_err(std::cout, "Unsupported parameter type in function declaration!");
+            return {false, AST::DeclarationVariant{}};
+        }
+    }
+
+    if (!types.contains(declaration->return_type)) 
+    {
+        report_err(std::cout, "Unsupported return type in function declaration!");
+        return {false, AST::DeclarationVariant{}};
+    }
+
+    auto as_statement = AST::StatementVariant{std::move(declaration->body)};
+    auto [ok, rich_body] = perform_analysis(as_statement);
+    if (!ok)
+    {
+        return {false, AST::DeclarationVariant{}};
+    }
+
+    current_function = nullptr; 
+    // update with rich information
+    declaration->body = std::move(std::get<std::unique_ptr<AST::BlockStatement>>(rich_body));
+    
+    // ensure there is at least one return statement (is this correct? no. I don't care)
+    bool found_return = false;
+    for (auto& statement : declaration->body->statements)
+    {
+        if (std::holds_alternative<std::unique_ptr<AST::ReturnStatement>>(statement)) 
+        {
+            found_return = true;
+            break;
+        }
+
+    }
+
+    if (declaration->return_type != "void" && !found_return)
+    {
+        report_err(std::cout, "Non-void function must have at least one return statement!");
+        return {false, AST::DeclarationVariant{}};
+    }
+    
+    return {true, std::move(declaration)};
+}
+
+std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_ptr<AST::ReturnStatement> &statement)
+{
+    if (statement->value.has_value())
+    {
+        auto [ok, rich_expr] = perform_analysis(statement->value.value());
+        if (!ok)
+        {
+            return {false, AST::StatementVariant{}};
+        }
+
+        if (AST::get_type(rich_expr) != current_function->return_type)
+        {
+            report_err(std::cout, "Return type does not match function return type!");
+            return {false, AST::StatementVariant{}};
+        }
+
+        statement->value = std::move(rich_expr);
+    }
+    else if (current_function->return_type != "void")
+    {
+        report_err(std::cout, "Non-void function must return a value!");
+        return {false, AST::StatementVariant{}};
+    }
+
+    return {true, std::move(statement)};
 }

@@ -3,6 +3,7 @@
 
 #include <variant>
 #include <memory>
+#include <optional>
 #include <vector>
 #include <string>
 #include "lexer.h"
@@ -230,6 +231,7 @@ namespace AST
     };
 
     struct PrintStatement;
+    struct ReturnStatement; 
     struct VariableDecl;
     struct ExpressionStatement;
     struct IfElseStatement;
@@ -240,10 +242,20 @@ namespace AST
         _up<BlockStatement>,
         _up<PrintStatement>,
         _up<VariableDecl>,
+        _up<ReturnStatement>,
         _up<ExpressionStatement>,
         _up<IfElseStatement>,
         _up<WhileStatement>
     >;
+
+    struct ReturnStatement : Statement 
+    {
+        std::optional<ExprVariant> value; // can be empty for void functions
+
+        explicit ReturnStatement(const size_t line, std::optional<ExprVariant> value) : Statement(line), value(std::move(value))
+        {
+        }
+    };
 
     struct BlockStatement : Statement
     {

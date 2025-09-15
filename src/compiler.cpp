@@ -47,6 +47,60 @@ llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::ExpressionStatement>
     return nullptr; // will this bite me
 }
 
+llvm::Function* Codegen::dgen(const std::unique_ptr<AST::FunctionDeclaration> &fd)
+{
+    auto return_type = type_to_llvm_ty[fd->return_type];
+
+    auto arg_types = std::vector<llvm::Type*>{};
+    for (const auto& arg : fd->params)
+    {
+        arg_types.push_back(type_to_llvm_ty[arg.type]);
+    }   
+
+    llvm::Function* func = llvm::Function::Create(
+        llvm::FunctionType::get(return_type, arg_types, false), // false = not vararg
+        llvm::Function::ExternalLinkage,
+        fd->name,
+        *mod
+    );
+    
+    // add the names to the arguments
+    for (auto& arg : func->args())
+    {
+        arg.setName(fd->params[arg.getArgNo()].name);
+    }
+
+    llvm::BasicBlock* bb = llvm::BasicBlock::Create(*context, "entry", func);
+    builder->SetInsertPoint(bb);    
+ 
+    // promote arguments to variables and store them
+    for (auto& arg : func->args())
+    {
+        const auto alloca = builder->CreateAlloca(arg.getType(), nullptr, arg.getName() + ".addr");
+        builder->CreateStore(&arg, alloca);
+        variable_locations[arg.getName().str()] = alloca;
+    }
+    
+    generate(AST::StatementVariant{std::move(fd->body)});
+
+    if (fd->return_type == "void")
+    {
+        builder->CreateRetVoid();
+    }
+
+    return func;
+}
+
+llvm::Instruction *Codegen::sgen(const std::unique_ptr<AST::ReturnStatement> &r)
+{
+    if (r->value.has_value()) {
+        llvm::Value* ret_val = generate(r->value.value());
+        return builder->CreateRet(ret_val);
+    } else {
+        return builder->CreateRetVoid();
+    }
+}
+
 llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::IfElseStatement>& e)
 {
     // any value that is non-zero is true in C
