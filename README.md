@@ -2,7 +2,7 @@
 Mini-C is a compiler for a restricted subset of the C programming language, written in C++ using LLVM's backend. It is primarily built to learn how the LLVM backend cooperates with a frontend. 
 
 Example Input: 
-```
+```c
 int add(int a, int b)
 {
         return a + b;
@@ -15,7 +15,7 @@ int main() {
 ```
 
 Corresponding Output:
-```
+```llvm
 ; ModuleID = 'main'
 source_filename = "main"
 
