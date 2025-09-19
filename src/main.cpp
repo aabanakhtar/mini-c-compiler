@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
         s = std::move(_);
         if (!ok) 
         {
-            std::cout << "Faile dparsing!";
+            std::cout << "Compilation failed: Failed parsing!";
             return 1;
         }
     }
