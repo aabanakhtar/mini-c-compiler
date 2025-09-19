@@ -20,7 +20,21 @@ First, ensure LLVM is installed and available via `find_package`.
 On Linux, you may need to install LLVM development packages, for example:
 
 ```sh
-sudo apt install llvm-dev clang
+sudo apt-get install llvm-dev clang
 ```
 
-more coming soon.
+Then, build the CMake Project
+```sh
+mkdir build
+cd build
+cmake -G .. 
+cmake --build . 
+```
+
+Then, run the project:
+
+```sh
+./mini-c-compiler main.c 
+``` 
+
+The project will spit out an llvm IR file, which you can compile using clang. 

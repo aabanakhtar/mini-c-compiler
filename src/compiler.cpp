@@ -14,6 +14,22 @@ Codegen::Codegen()
     type_to_llvm_ty["void"]  = llvm::Type::getVoidTy(*context);
 }
 
+void Codegen::compile_translation_unit(const std::vector<AST::DeclarationVariant> &declarations)
+{
+    for (auto & d : declarations)
+    {
+        generate(d);
+    }
+
+    mod->print(llvm::outs(), nullptr);
+    // check if its generating good IR
+    if (llvm::verifyModule(*mod, &llvm::errs()))
+    {
+        llvm::errs() << "Module verification failed! Please consider this a severe skill issue.\n";
+    }
+}
+
+
 llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::BlockStatement>& block)
 {
     for (const auto& s : block->statements)
@@ -88,6 +104,7 @@ llvm::Function* Codegen::dgen(const std::unique_ptr<AST::FunctionDeclaration> &f
         builder->CreateRetVoid();
     }
 
+    declared_functions[fd->name] = func;
     return func;
 }
 
@@ -290,7 +307,13 @@ llvm::Value* Codegen::gen(const std::unique_ptr<AST::Assignment>& asn)
 
 llvm::Value* Codegen::gen(const std::unique_ptr<AST::Call>& call)
 {
-    return nullptr;
+    std::vector<llvm::Value*> args; 
+    for (auto& arg : call->args)
+    {
+        args.push_back(generate(arg));
+    }
+
+    return builder->CreateCall(declared_functions[call->func_name.value], args, "callresult");
 }
 
 llvm::Value* Codegen::gen(const std::unique_ptr<AST::StructAccess>& sa)

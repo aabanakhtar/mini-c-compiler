@@ -428,7 +428,26 @@ AST::ExprVariant Parser::parse_unary()
 // TODO: update when finding postfix stuff
 AST::ExprVariant Parser::parse_postfix()
 {
-    return parse_primary();
+    // make sure that we dont accidentally parse a variable as a function call
+    if (check(TokenType::IDENTIFIER) && peek().value != "printf" && current_tok + 1 < tokens.size() && tokens[current_tok + 1].type == TokenType::LEFT_PAREN)
+    {
+        auto id = advance(); 
+        expect(TokenType::LEFT_PAREN, "Expected ( after function name in function call.");
+
+        std::vector<AST::ExprVariant> args;
+        if (!check(TokenType::RIGHT_PAREN)) // if there are arguments
+        {
+            // get the arg first, then loop back for the next one if possible
+            do 
+            {
+                args.push_back(parse_assignment()); // get each arg (expression)
+            } while (check(TokenType::COMMA) && advance().type == TokenType::COMMA); // the second arg is just for cleanliness purposes
+        }
+        expect(TokenType::RIGHT_PAREN, "Expected ) after function arguments in function call.");
+        return std::make_unique<AST::Call>(id.line, id, std::move(args));
+    }
+
+    return parse_primary(); // lowest level to go
 }
 
 AST::ExprVariant Parser::parse_primary()

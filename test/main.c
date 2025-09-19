@@ -1,11 +1,10 @@
 
 int add(int a, int b)
 {
-	b = 6; 
-	return 3;
+	return a + b;
 }
 
 
 int main() {
-	return 0;
+	return add(2, 3);
 }

@@ -6,14 +6,13 @@
 
 class SemanticAnalyzer
 {
-    struct FunctionProtoype
+public:
+    struct FunctionPrototype
     {
         std::string return_type;
         std::vector<std::string> param_types; // only types are needed for checking
     }; 
 
-
-public:
     explicit SemanticAnalyzer() = default;
 
     auto perform_analysis(AST::ExprVariant& variant)
@@ -75,7 +74,7 @@ private:
     std::pair<bool, AST::ExprVariant> analyze(std::unique_ptr<AST::Binary>& bin);
     std::pair<bool, AST::ExprVariant> analyze(std::unique_ptr<AST::Unary>& un);
     std::pair<bool, AST::ExprVariant> analyze(std::unique_ptr<AST::Assignment>& asn);
-    std::pair<bool, AST::ExprVariant> analyze(const std::unique_ptr<AST::Call>& call);
+    std::pair<bool, AST::ExprVariant> analyze(std::unique_ptr<AST::Call>& call);
     std::pair<bool, AST::ExprVariant> analyze(const std::unique_ptr<AST::StructAccess>& sa);
     std::pair<bool, AST::ExprVariant> analyze(const std::unique_ptr<AST::ArrayAccess>& aa);
 
@@ -90,7 +89,7 @@ private:
     std::vector<Variable> declared_variables;
     std::unordered_map<std::string, std::string> declared_variable_types;
     std::unordered_set<std::string> types = {"int", "void"}; // supported types
-    std::unordered_set<std::string> declared_functions; 
+    std::unordered_map<std::string, FunctionPrototype> declared_functions; 
     std::size_t current_scope_depth = 0;
 
     // store grammar rules

@@ -302,7 +302,7 @@ std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(std::unique_ptr<AST:
     return {true, std::move(asn)};
 }
 
-std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(const std::unique_ptr<AST::Call>& call)
+std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(std::unique_ptr<AST::Call>& call)
 {
     const auto found_function = declared_functions.find(call->func_name.value); 
     // Check if the function exists
@@ -314,7 +314,41 @@ std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(const std::unique_pt
         return {false, AST::Literal{0, 0}};
     }
 
+    // Check that the number of arguments in the call matches the number of parameters
+    const auto& proto = found_function->second;
+    if (call->args.size() != proto.param_types.size())
+    {
+        std::ostringstream ss;
+        ss << "Function call argument count mismatch for function: " << call->func_name.value << "\n";
+        report_err(std::cout, ss.str());
+        return {false, AST::Literal{0, 0}};
+    }
 
+    // Check that each argument type is compatible with its corresponding parameter type
+    for (auto i = 0; i < call->args.size(); ++i)
+    {
+        auto [ok, rich_arg] = perform_analysis(call->args[i]);
+        if (!ok)
+        {
+            return {false, AST::Literal{0, 0}};
+        }
+
+        if (AST::get_type(rich_arg) != proto.param_types[i])
+        {
+            std::ostringstream ss;
+            ss << "Function call argument type mismatch for function: " << call->func_name.value << " at argument index " << i << "\n";
+            report_err(std::cout, ss.str());
+            return {false, AST::Literal{0, 0}};
+        }
+
+        // update with rich info
+        call->args[i] = std::move(rich_arg);
+    }
+
+    // Check that the call’s return value is used appropriately 
+    call->result_type = proto.return_type; 
+
+    return {true, std::move(call)};
 }
 
 std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(const std::unique_ptr<AST::StructAccess>& sa)
@@ -336,7 +370,14 @@ std::pair<bool, AST::DeclarationVariant> SemanticAnalyzer::danalyze(std::unique_
         return {false, AST::DeclarationVariant{}};
     }
 
-    declared_functions.insert(declaration->name);
+    std::vector<std::string> param_types;
+    for (auto& [ty, name] : declaration->params) 
+    {
+        param_types.push_back(ty);
+    }
+
+    FunctionPrototype proto = {declaration->return_type, std::move(param_types)};
+    declared_functions.insert({declaration->name, proto});
 
     std::unordered_set<std::string> param_names; 
     for (auto& [ty, name] : declaration->params) 

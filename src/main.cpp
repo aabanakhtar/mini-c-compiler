@@ -16,15 +16,12 @@ int main(int argc, char* argv[])
         report_err(std::cout, "Couldn't open translation unit for compilation!");
         return 1;
     }
+    
     std::string file_contents = (std::ostringstream() << file.rdbuf()).str();
-    std::cout << file_contents << "\n"; 
+    std::cout << "Read file: \n" << file_contents << "\n"; 
 
     Lexer lexer(file_contents); 
     auto toks = lexer.lex();
-    for (auto& tok : toks) 
-    {
-        print_token(tok); 
-    } 
 
     if (get_err() == ErrorMode::ERR)
     {
@@ -52,5 +49,8 @@ int main(int argc, char* argv[])
     }
 
     Codegen gen;
-    gen.test_expr_gen(expr);
+    std::cout << "\n\nGenerating LLVM IR....\n\n";
+    gen.compile_translation_unit(expr);
+
+    return 0;
 }

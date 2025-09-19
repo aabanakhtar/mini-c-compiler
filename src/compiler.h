@@ -13,21 +13,9 @@ class Codegen
 public:
     explicit Codegen();
 
-    void test_expr_gen(const std::vector<AST::DeclarationVariant>& sts)
-    {
-        for (auto & d : sts)
-        {
-            generate(d);
-        }
+    void compile_translation_unit(const std::vector<AST::DeclarationVariant>& declarations);
 
-        mod->print(llvm::outs(), nullptr);
-        // check if its generating good IR
-        if (llvm::verifyModule(*mod, &llvm::errs()))
-        {
-            llvm::errs() << "Module verification failed!\n";
-        }
-    }   
-
+private:
     void generate(const AST::DeclarationVariant& d)
     {
         std::visit([&](auto& x)
@@ -108,8 +96,9 @@ private:
     // llvm types for creating variables
     std::unordered_map<std::string, llvm::Type*> type_to_llvm_ty;
     // store variables that exist
-    // TODO: support the whole stack frames thing
     std::unordered_map<std::string, llvm::AllocaInst*> variable_locations;
+    // store function prototypes
+    std::unordered_map<std::string, llvm::Function*> declared_functions;
 };
 
 
