@@ -304,6 +304,17 @@ std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(std::unique_ptr<AST:
 
 std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(const std::unique_ptr<AST::Call>& call)
 {
+    const auto found_function = declared_functions.find(call->func_name.value); 
+    // Check if the function exists
+    if (found_function == declared_functions.end())
+    {
+        std::ostringstream ss;
+        ss << "Function not declared: " << call->func_name.value << "\n";
+        report_err(std::cout, ss.str());
+        return {false, AST::Literal{0, 0}};
+    }
+
+
 }
 
 std::pair<bool, AST::ExprVariant> SemanticAnalyzer::analyze(const std::unique_ptr<AST::StructAccess>& sa)

@@ -6,6 +6,13 @@
 
 class SemanticAnalyzer
 {
+    struct FunctionProtoype
+    {
+        std::string return_type;
+        std::vector<std::string> param_types; // only types are needed for checking
+    }; 
+
+
 public:
     explicit SemanticAnalyzer() = default;
 
