@@ -1,5 +1,6 @@
 # mini-c
-###Watch an explanation by clicking down here
+### Watch an explanation by clicking down here
+
 [![Watch the video](https://img.youtube.com/vi/rlQPR69gjhY/0.jpg)](https://www.youtube.com/watch?v=rlQPR69gjhY)
 
 
