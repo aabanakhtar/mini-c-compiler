@@ -1,4 +1,5 @@
 # mini-c
+[![Watch the video](https://img.youtube.com/vi/rlQPR69gjhY/0.jpg)](https://www.youtube.com/watch?v=rlQPR69gjhY)
 Mini-C is a compiler for a restricted subset of the C programming language, written in C++ using LLVM's backend. It is primarily built to learn how the LLVM backend cooperates with a frontend. 
 
 Example Input: 
