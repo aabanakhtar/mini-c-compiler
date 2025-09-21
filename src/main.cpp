@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    const char* filename = argv[0];
+    const char* filename = argv[1];
     std::fstream file(filename);
     if (!file.is_open())
     {
@@ -24,13 +24,13 @@ int main(int argc, char* argv[])
     }
     
     std::string file_contents = (std::ostringstream() << file.rdbuf()).str();
-    std::cout << "Read file: \n" << file_contents << "\n"; 
 
     Lexer lexer(file_contents); 
     auto toks = lexer.lex();
 
     if (get_err() == ErrorMode::ERR)
     {
+        std::cerr << "Failed to lex the input file!\n";
         return 1;
     }
 
@@ -55,8 +55,8 @@ int main(int argc, char* argv[])
         }
     }
 
+    std::cout << "\n\n\033[1mGenerating LLVM IR....\033[0m\n\n";
     Codegen gen;
-    std::cout << "\n\nGenerating LLVM IR....\n\n";
     gen.compile_translation_unit(expr);
 
     return 0;
