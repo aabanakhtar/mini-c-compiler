@@ -92,7 +92,7 @@ llvm::Function* Codegen::dgen(const std::unique_ptr<AST::FunctionDeclaration> &f
     // promote arguments to variables and store them
     for (auto& arg : func->args())
     {
-        const auto alloca = builder->CreateAlloca(arg.getType(), nullptr, arg.getName() + ".addr");
+        const auto alloca = builder->CreateAlloca(arg.getType(), nullptr, arg.getName() + "_asalloca");
         builder->CreateStore(&arg, alloca);
         variable_locations[arg.getName().str()] = alloca;
     }
@@ -128,9 +128,9 @@ llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::IfElseStatement>& e)
 
     llvm::Function* current_function = builder->GetInsertBlock()->getParent();
     // define the bodies for each branch
-    auto if_block = llvm::BasicBlock::Create(*context, "if_body", current_function);
-    auto else_block = llvm::BasicBlock::Create(*context, "else_body", current_function); 
-    auto merge_block = llvm::BasicBlock::Create(*context, "if_end", current_function);
+    auto if_block = llvm::BasicBlock::Create(*context, "ifbody", current_function);
+    auto else_block = llvm::BasicBlock::Create(*context, "elsebody", current_function); 
+    auto merge_block = llvm::BasicBlock::Create(*context, "ifend", current_function);
 
     // branch to the correct block based on the condition
     builder->CreateCondBr(condition, if_block, else_block); 
@@ -162,9 +162,9 @@ llvm::Instruction* Codegen::sgen(const std::unique_ptr<AST::WhileStatement>& w)
     
     // define our basic blocks
     llvm::Function* current_function = builder->GetInsertBlock()->getParent();
-    auto while_cond = llvm::BasicBlock::Create(*context, "while_cond", current_function);
-    auto body_block = llvm::BasicBlock::Create(*context, "while_body", current_function);
-    auto merge_point = llvm::BasicBlock::Create(*context, "while_end", current_function);
+    auto while_cond = llvm::BasicBlock::Create(*context, "whilecond", current_function);
+    auto body_block = llvm::BasicBlock::Create(*context, "whilebody", current_function);
+    auto merge_point = llvm::BasicBlock::Create(*context, "whileend", current_function);
     
     builder->CreateBr(while_cond); // jump to condition check first
     
@@ -228,7 +228,7 @@ llvm::Value* Codegen::gen(const AST::Variable& var)
     llvm::Value* loadedVal = builder->CreateLoad(
         allocation->getAllocatedType(),  // type of value stored
         allocation,                       // pointer to load from
-        "loadedVal"                        // optional name
+        "load" + var.name.value                        // optional name
     );
 
     // if we are just getting the address of the variable, return that
@@ -257,7 +257,7 @@ llvm::Value* Codegen::generate_unary_int_ops(const std::unique_ptr<AST::Unary>& 
     {
         const auto type = llvm::Type::getInt32Ty(*context);
         const auto zero_val = llvm::ConstantInt::get(type, 0, true);
-        return builder->CreateSub(zero_val, rhs);
+        return builder->CreateSub(zero_val, rhs, "negatetmp");
     }
     case TokenType::PLUS:
         return rhs; // unary + has no effect on the operand
@@ -294,13 +294,10 @@ llvm::Value* Codegen::gen(const std::unique_ptr<AST::Unary>& un)
 
 llvm::Value* Codegen::gen(const std::unique_ptr<AST::Assignment>& asn)
 {
-
     const auto rhs = generate(asn->rhs);
-    
     value_flag = false;
     const auto lhs = generate(asn->lhs);
     value_flag = true;
-    
     builder->CreateStore(rhs, lhs);
     return rhs; 
 }
@@ -341,38 +338,42 @@ llvm::Value* Codegen::generate_int_ops(const std::unique_ptr<AST::Binary>& bin)
     switch (bin->op)
     {
     case TokenType::PLUS:
-        result = builder->CreateAdd(left, right);
+        result = builder->CreateAdd(left, right, "plustmp");
         break;
     case TokenType::MINUS:
-        result = builder->CreateSub(left, right);
+        result = builder->CreateSub(left, right, "minustmp");
         break;
     case TokenType::STAR:
-        result = builder->CreateMul(left, right);
+        result = builder->CreateMul(left, right, "multmp");
         break;
     case TokenType::SLASH:
-        result = builder->CreateSDiv(left, right);
+        result = builder->CreateSDiv(left, right, "divtmp");
         break;
     case TokenType::EQUAL_EQUAL:
-        result = builder->CreateICmpEQ(left, right);
+        result = builder->CreateICmpEQ(left, right, "eqtmp");
         break;
     case TokenType::BANG_EQUAL:
-        result = builder->CreateICmpNE(left, right);
+        result = builder->CreateICmpNE(left, right, "bang_eqtmp");
         break;
     case TokenType::LESS:
-        result = builder->CreateICmpSLT(left, right);
+        result = builder->CreateICmpSLT(left, right, "lesstmp");
         break;
     case TokenType::GREATER:
-        result = builder->CreateICmpSGT(left, right);
+        result = builder->CreateICmpSGT(left, right, "greatertmp");
         break;
     case TokenType::LESS_EQUAL:
-        result = builder->CreateICmpSLE(left, right);
+        result = builder->CreateICmpSLE(left, right, "lesseqtmp");
         break;
     case TokenType::GREATER_EQUAL:
-        result = builder->CreateICmpSGE(left, right);
+        result = builder->CreateICmpSGE(left, right, "greatereqtmp");
         break;
 
     case TokenType::AND:
+        result = builder->CreateAnd(left, right, "andtmp");
+        break;
     case TokenType::OR:
+        result = builder->CreateOr(left, right, "ortmp");
+        break;
     default:
         return nullptr;
     }

@@ -9,11 +9,17 @@
 
 int main(int argc, char* argv[]) 
 {
-    const char* filename = "../test/main.c";
+    if (argc < 2)
+    {
+        std::cerr << "Usage: mini-c <source-file>\n";
+        return 1;
+    }
+
+    const char* filename = argv[0];
     std::fstream file(filename);
     if (!file.is_open())
     {
-        report_err(std::cout, "Couldn't open translation unit for compilation!");
+        report_err(std::cout, "mini-c couldn't open translation unit for compilation!");
         return 1;
     }
     
@@ -33,6 +39,7 @@ int main(int argc, char* argv[])
 
     if (get_err() == ErrorMode::ERR)
     {
+        std::cerr << "Failed to parse the input file!\n";
         return 1;
     }
 

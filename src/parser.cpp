@@ -100,7 +100,7 @@ Parser::Program Parser::get_program()
         p.push_back(parse_function_declaration());
         if (is_panic)
         {
-            // TODO: handlePanic();
+            // just stop parsing, and keep life simple; this is not production code anyway
             break;
         }
     }

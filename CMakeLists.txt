@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22.1) 
-project(baby-c)
+project(mini-c)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -20,8 +20,8 @@ set(SRCs
     src/error.cpp
     src/parser.cpp
     src/compiler.cpp
-        src/semanalyzer.h
-        src/semanalyzer.cpp
+    src/semanalyzer.h
+    src/semanalyzer.cpp
 )
 
 llvm_map_components_to_libnames(llvm_libs support core irreader)
