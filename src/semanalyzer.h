@@ -98,7 +98,13 @@ private:
             {TokenType::PLUS, {"int", "int"}},
             {TokenType::MINUS, {"int", "int"}},
             {TokenType::EQUAL_EQUAL, {"int", "int"}},
-            {TokenType::BANG_EQUAL, {"int", "int"}}
+            {TokenType::BANG_EQUAL, {"int", "int"}},
+            {TokenType::GREATER, {"int", "int"}},
+            {TokenType::GREATER_EQUAL, {"int", "int"}},
+            {TokenType::LESS, {"int", "int"}},
+            {TokenType::LESS_EQUAL, {"int", "int"}},
+            {TokenType::AND, {"int", "int"}},
+            {TokenType::OR, {"int", "int"}} 
         };
 
     const std::unordered_multimap<TokenType, std::string>

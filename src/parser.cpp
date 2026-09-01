@@ -137,9 +137,9 @@ AST::DeclarationVariant Parser::parse_function_declaration()
     expect(TokenType::RIGHT_PAREN, "Expected ) after function arguments in function declaration.");
     // get the body
     auto body_variant = parse_block_statement();
-    // Extract BlockStatement from variant
-    auto body_ptr = std::move(std::get<std::unique_ptr<AST::BlockStatement>>(body_variant));
-    return std::make_unique<AST::FunctionDeclaration>(line, name_token, return_ty, params, std::move(body_ptr));
+    auto body = std::get<std::unique_ptr<AST::BlockStatement>>(std::move(body_variant));
+
+    return std::make_unique<AST::FunctionDeclaration>(line, name_token, return_ty, params, std::move(body));
 }
 
 AST::StatementVariant Parser::parse_block_statement()
@@ -338,7 +338,7 @@ AST::ExprVariant Parser::parse_logic_or()
 AST::ExprVariant Parser::parse_logic_and()
 {
     auto lhs = parse_equality(); 
-    while (check(TokenType::OR)) 
+    while (check(TokenType::AND)) 
     {
         advance(); // get rid of ampersand
         auto rhs = parse_equality(); 

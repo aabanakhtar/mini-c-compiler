@@ -372,7 +372,11 @@ llvm::Value* Codegen::generate_int_ops(const std::unique_ptr<AST::Binary>& bin)
         break;
 
     case TokenType::AND:
+        result = builder->CreateAnd(left, right);
+        break;          
     case TokenType::OR:
+        result = builder->CreateOr(left, right);
+        break;
     default:
         return nullptr;
     }
