@@ -85,6 +85,12 @@ std::pair<bool, AST::StatementVariant> SemanticAnalyzer::sanalyze(std::unique_pt
         return {false, AST::StatementVariant{}};
     }
 
+    if (statement->type == "void")
+    {
+        report_err(std::cout, "Variable cannot be of type void");
+        return {false, AST::StatementVariant{}};
+    }
+
     if (AST::get_type(s) != statement->type)
     {
         report_err(std::cout, "Expected matching types in variable declaration");
