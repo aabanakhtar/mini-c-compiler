@@ -313,6 +313,13 @@ llvm::Value* Codegen::gen(const std::unique_ptr<AST::Call>& call)
         args.push_back(generate(arg));
     }
 
+    auto* func = declared_functions[call->func_name.value]; 
+    if (func->getFunctionType()->getReturnType()->isVoidTy())
+    {
+        builder->CreateCall(func, args);
+        return nullptr;
+    }
+
     return builder->CreateCall(declared_functions[call->func_name.value], args, "callresult");
 }
 

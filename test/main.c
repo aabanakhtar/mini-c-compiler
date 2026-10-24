@@ -1,6 +1,5 @@
-int printX() {
+void printX() {
 	printf("X!");
-	return 0;
 }
 
 int add(int a, int b) { 
